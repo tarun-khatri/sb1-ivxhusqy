@@ -1,106 +1,219 @@
-import { TwitterAccountData } from '../types';
+import { 
+  TwitterData, 
+  LinkedInData, 
+  MediumData, 
+  SocialProfile, 
+  FollowerStats, 
+  ContentAnalysis,
+  Company, 
+  CryptoData,
+  CompetitorData
+} from '../types';
 
-const XCANCEL_BASE_URL = 'https://xcancel.com';
-const CMC_BASE_URL = 'https://pro-api.coinmarketcap.com/v1';
+// --- Placeholder API Functions ---
+// These functions simulate fetching data for each platform.
+// Replace these with actual API calls using RapidAPI or other services.
 
-export async function fetchUserTweets(username: string) {
-  try {
-    const response = await fetch(`${XCANCEL_BASE_URL}/${username}`);
-    if (!response.ok) throw new Error('Failed to fetch tweets');
-    return await response.text(); // Returns RSS/HTML content
-  } catch (error) {
-    console.error('Error fetching tweets:', error);
-    throw error;
-  }
-}
+// MOCK DELAY - Simulate network latency
+const MOCK_API_DELAY = 800; // milliseconds
 
-export async function fetchUserReplies(username: string) {
-  try {
-    const response = await fetch(`${XCANCEL_BASE_URL}/${username}/with_replies`);
-    if (!response.ok) throw new Error('Failed to fetch replies');
-    return await response.text();
-  } catch (error) {
-    console.error('Error fetching replies:', error);
-    throw error;
-  }
-}
+// --- Twitter/X Data Fetching ---
+export async function fetchTwitterData(username: string, companyName: string): Promise<TwitterData | null> {
+  if (!username) return null;
 
-export async function fetchCryptoPrice(symbol: string) {
-  try {
-    const response = await fetch(`${CMC_BASE_URL}/cryptocurrency/quotes/latest?symbol=${symbol}`, {
-      headers: {
-        'X-CMC_PRO_API_KEY': import.meta.env.VITE_CMC_API_KEY,
-      },
-    });
-    if (!response.ok) throw new Error('Failed to fetch crypto price');
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching crypto price:', error);
-    throw error;
-  }
-}
+  console.log(`Simulating API call to fetch Twitter data for @${username}`);
+  await new Promise(resolve => setTimeout(resolve, MOCK_API_DELAY));
 
-// Helper function to parse tweets from xcancel HTML response
-function parseTweetsFromHTML(html: string) {
-  // We'll need to implement HTML parsing here
-  // This is a placeholder for the parsing logic
-  return {
-    tweets: [],
-    followerCount: 0,
-    // Add other relevant data
-  };
-}
+  // Simulate success or failure (e.g., 90% success rate)
+  if (Math.random() < 0.9) {
+    // Mock successful response
+    const mockProfile: SocialProfile = {
+      platform: 'Twitter',
+      username: username,
+      displayName: `${companyName} (X)`,
+      profileImage: `https://unavatar.io/twitter/${username}`,
+      bio: `Mock bio for ${companyName} on Twitter/X. Analyzing the competition.`,
+      location: 'Mock Location',
+      url: `https://twitter.com/${username}`,
+      followers: Math.floor(Math.random() * 100000) + 1000,
+      following: Math.floor(Math.random() * 1000) + 50,
+      postsCount: Math.floor(Math.random() * 5000) + 200,
+      joinedDate: '2023-01-15',
+    };
 
-export async function getAccountData(username: string): Promise<TwitterAccountData | null> {
-  try {
-    const tweetsHTML = await fetchUserTweets(username);
-    const repliesHTML = await fetchUserReplies(username);
-    
-    // Parse the HTML responses to extract data
-    const parsedData = parseTweetsFromHTML(tweetsHTML);
-    
-    // This is a placeholder structure - we'll need to implement proper parsing
+    const mockFollowerStats: FollowerStats = {
+      current: mockProfile.followers,
+      oneDayChange: { count: Math.floor(Math.random() * 200) - 100, percentage: Math.random() * 2 - 1 },
+      oneWeekChange: { count: Math.floor(Math.random() * 1000) - 500, percentage: Math.random() * 5 - 2.5 },
+      oneMonthChange: { count: Math.floor(Math.random() * 5000) - 2500, percentage: Math.random() * 10 - 5 },
+      history: [
+        { date: '2024-07-10', count: (mockProfile.followers || 0) - 2500 },
+        { date: '2024-07-17', count: (mockProfile.followers || 0) - 1500 },
+        { date: '2024-07-24', count: (mockProfile.followers || 0) - 500 },
+        { date: '2024-07-31', count: mockProfile.followers || 0 },
+      ],
+    };
+
+    const mockAnalysis: ContentAnalysis = {
+       averageEngagement: Math.random() * 0.05, // 0-5% engagement rate
+       postsPerPeriod: Math.random() * 5 + 1, // 1-6 posts per day (mock)
+       sentimentBreakdown: { positive: 0.6, negative: 0.1, neutral: 0.3 }
+    };
+
     return {
-      profile: {
-        username,
-        displayName: '', // Extract from HTML
-        profileImage: '', // Extract from HTML
-        bio: '', // Extract from HTML
-        location: '', // Extract from HTML
-        followers: parsedData.followerCount,
-        following: 0, // Extract from HTML
-        isCrypto: false, // Determine based on content analysis
-      },
-      followerStats: {
-        current: parsedData.followerCount,
-        oneDayChange: { count: 0, percentage: 0 },
-        oneWeekChange: { count: 0, percentage: 0 },
-        oneMonthChange: { count: 0, percentage: 0 },
-        history: [],
-      },
-      tweetAnalysis: {
-        mostViralTweet: {
-          id: '',
-          text: '',
-          date: '',
-          likes: 0,
-          retweets: 0,
-          replies: 0,
-          engagement: 0,
-          sentiment: 'neutral',
-        },
-        frequentWords: [],
-        sentimentBreakdown: {
-          positive: 0,
-          negative: 0,
-          neutral: 0,
-        },
-        averageEngagement: 0,
-        postsPerDay: 0,
-      },
+      profile: mockProfile,
+      followerStats: mockFollowerStats,
+      contentAnalysis: mockAnalysis,
+    };
+  } else {
+    // Mock failure
+    console.error(`Mock API Error: Could not fetch Twitter data for @${username}`);
+    return null;
+    // OR: throw new Error('Failed to fetch Twitter data'); // depending on how you handle errors
+  }
+}
+
+// --- LinkedIn Data Fetching ---
+export async function fetchLinkedInData(identifier: string, companyName: string): Promise<LinkedInData | null> {
+  if (!identifier) return null;
+
+  console.log(`Simulating API call to fetch LinkedIn data for identifier: ${identifier}`);
+  await new Promise(resolve => setTimeout(resolve, MOCK_API_DELAY + 200)); // Slightly longer delay
+
+  // LinkedIn data is harder to get, simulate lower success or less data
+  if (Math.random() < 0.7) { 
+    const mockProfile: SocialProfile = {
+      platform: 'LinkedIn',
+      profileId: identifier,
+      displayName: `${companyName} (LinkedIn)`,
+      profileImage: `https://unavatar.io/linkedin/${identifier}`, // May not work for company pages
+      bio: `Mock company description for ${companyName} on LinkedIn. Focus on professional networking.`,
+      url: `https://www.linkedin.com/company/${identifier}`, // Example URL structure
+      followers: Math.floor(Math.random() * 50000) + 500,
+      postsCount: Math.floor(Math.random() * 1000) + 50,
+    };
+
+    // Mock limited follower stats if available
+    const mockFollowerStats: FollowerStats = {
+        current: mockProfile.followers,
+        // LinkedIn API might not provide detailed history easily
+    };
+
+    return {
+      profile: mockProfile,
+      followerStats: mockFollowerStats,
+      // Content analysis might be very limited or unavailable
+    };
+  } else {
+    console.error(`Mock API Error: Could not fetch LinkedIn data for ${identifier}`);
+    return null;
+  }
+}
+
+// --- Medium Data Fetching ---
+export async function fetchMediumData(username: string, companyName: string): Promise<MediumData | null> {
+  if (!username) return null;
+
+  console.log(`Simulating API call to fetch Medium data for @${username}`);
+  await new Promise(resolve => setTimeout(resolve, MOCK_API_DELAY + 100));
+
+  if (Math.random() < 0.8) {
+    const mockProfile: SocialProfile = {
+      platform: 'Medium',
+      username: username,
+      displayName: `${companyName} (Medium Blog)`,
+      profileImage: `https://unavatar.io/medium/${username}`,
+      bio: `Mock bio for ${companyName}'s Medium publication/author page. Sharing insights and stories.`,
+      url: `https://medium.com/@${username}`, // Or publication URL
+      followers: Math.floor(Math.random() * 20000) + 200, // Publication followers
+      postsCount: Math.floor(Math.random() * 500) + 10,
+    };
+    
+    // Mock limited data
+     const mockFollowerStats: FollowerStats = {
+        current: mockProfile.followers,
+    };
+
+    return {
+      profile: mockProfile,
+      followerStats: mockFollowerStats,
+      // Maybe fetch recent post titles later
+    };
+  } else {
+    console.error(`Mock API Error: Could not fetch Medium data for @${username}`);
+    return null;
+  }
+}
+
+// --- Crypto Data Fetching ---
+export async function fetchCryptoDataBySymbolOrId(symbolOrId: string): Promise<CryptoData | null> {
+  if (!symbolOrId) return null;
+
+  console.log(`Simulating API call to fetch Crypto data for ${symbolOrId}`);
+  await new Promise(resolve => setTimeout(resolve, MOCK_API_DELAY));
+
+  if (Math.random() < 0.9) {
+    // Mock successful response
+    const mockCryptoData: CryptoData = {
+      id: symbolOrId,
+      name: `Mock ${symbolOrId} Token`,
+      symbol: symbolOrId,
+      currentPrice: Math.random() * 150 + 0.5, // Random price between 0.5 and 150.5
+      priceChange24h: Math.random() * 10 - 5, // Random change between -5 and 5
+      priceChangePercentage24h: Math.random() * 5 - 2.5, // Random percentage change
+      marketCap: Math.floor(Math.random() * 1000000000) + 1000000,
+      volume24h: Math.floor(Math.random() * 1000000) + 1000
+    };
+    return mockCryptoData;
+  } else {
+    console.error(`Mock API Error: Could not fetch Crypto data for ${symbolOrId}`);
+    return null;
+  }
+}
+
+// --- Combined Fetch Function (used by Dashboard) ---
+export async function fetchAllCompetitorData(company: Company): Promise<CompetitorData> {
+  if (!company) {
+    return { twitter: null, linkedIn: null, medium: null, cryptoData: null };
+  }
+
+  console.log(`--- Fetching all data for ${company.name} ---`);
+
+  const twitterPromise = company.identifiers.twitter 
+    ? fetchTwitterData(company.identifiers.twitter, company.name)
+    : Promise.resolve(null);
+    
+  const linkedInPromise = company.identifiers.linkedIn 
+    ? fetchLinkedInData(company.identifiers.linkedIn, company.name)
+    : Promise.resolve(null);
+    
+  const mediumPromise = company.identifiers.medium 
+    ? fetchMediumData(company.identifiers.medium, company.name)
+    : Promise.resolve(null);
+
+  // Fetch Crypto Data
+  const cryptoPromise = company.cmcSymbolOrId
+    ? fetchCryptoDataBySymbolOrId(company.cmcSymbolOrId)
+    : Promise.resolve(null);
+
+  try {
+    const [twitterResult, linkedInResult, mediumResult, cryptoResult] = await Promise.all([
+      twitterPromise,
+      linkedInPromise,
+      mediumPromise,
+      cryptoPromise, // Await crypto data
+    ]);
+
+    console.log(`--- Finished fetching for ${company.name} ---`);
+    return {
+      twitter: twitterResult,
+      linkedIn: linkedInResult,
+      medium: mediumResult,
+      cryptoData: cryptoResult, // Include crypto data in the result
     };
   } catch (error) {
-    console.error('Error fetching account data:', error);
-    return null;
+    console.error("Error in fetchAllCompetitorData:", error);
+    // Return nulls or rethrow, depending on desired dashboard behavior
+    return { twitter: null, linkedIn: null, medium: null, cryptoData: null }; 
   }
 }

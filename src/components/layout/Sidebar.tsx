@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Drawer,
@@ -16,121 +16,126 @@ import {
   Avatar,
   Badge,
 } from '@mui/material';
-import { 
-  BarChart, 
-  TrendingUp, 
-  Users, 
-  Star, 
-  Info, 
-  Settings, 
-  DollarSign,
+import {
+  BarChart,
+  TrendingUp,
+  Users,
+  Star,
+  Info,
+  Settings,
+  Building,
   PlusCircle,
 } from 'lucide-react';
-import { mockTrackedAccounts } from '../../mock/data';
+import { Company } from '../../types';
+
+// --- Mock Company Data (Replace with dynamic data/state management later) ---
+const mockCompanies: Company[] = [
+  {
+    id: 'phantom-1', // Added unique ID
+    name: 'Phantom',
+    identifiers: {
+      twitter: 'phantom',
+      linkedIn: 'phantom-xyz',
+      medium: 'phantom-blog',
+    },
+    cmcSymbolOrId: 'SOL', // Added example CMC symbol (Solana, as Phantom is a Solana wallet)
+  },
+  // Add more companies here as needed
+];
+// --- End Mock Data ---
 
 interface SidebarProps {
   mobileOpen: boolean;
   handleDrawerToggle: () => void;
-  onSelectAccount: (username: string) => void;
+  onSelectCompany: (company: Company) => void;
+  selectedCompanyId?: string | null; // Pass down selected ID for styling
 }
 
 const drawerWidth = 280;
 
 const Sidebar: React.FC<SidebarProps> = ({ 
-  mobileOpen, 
+  mobileOpen,
   handleDrawerToggle,
-  onSelectAccount,
+  onSelectCompany,
+  selectedCompanyId,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
+  const [companies, setCompanies] = useState<Company[]>(mockCompanies); // Manage companies in state
+
+  // TODO: Implement function to add/update companies (e.g., for CMC ID updates)
+  // const updateCompany = (updatedCompany: Company) => {
+  //   setCompanies(prevCompanies => 
+  //     prevCompanies.map(c => c.id === updatedCompany.id ? updatedCompany : c)
+  //   );
+  // };
+
+  const getLogoURL = (companyName: string) => {
+    // Replace spaces with hyphens and convert to lowercase
+    const formattedName = companyName.toLowerCase().replace(/\s+/g, '-');
+    return `https://logo.clearbit.com/${formattedName}.com`;
+  };
+
   const drawerContent = (
     <>
       <Toolbar />
       <Box sx={{ px: 2.5, py: 3 }}>
         <Typography variant="h6" color="textPrimary" fontWeight="bold">
-          Dashboard
+          Competitor Analysis
         </Typography>
       </Box>
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton sx={{ borderRadius: '0 24px 24px 0', mx: 1 }}>
-            <ListItemIcon>
-              <BarChart size={22} color={theme.palette.primary.main} />
-            </ListItemIcon>
-            <ListItemText primary="Analytics" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton sx={{ borderRadius: '0 24px 24px 0', mx: 1 }}>
-            <ListItemIcon>
-              <TrendingUp size={22} color={theme.palette.secondary.main} />
-            </ListItemIcon>
-            <ListItemText primary="Trends" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton sx={{ borderRadius: '0 24px 24px 0', mx: 1 }}>
-            <ListItemIcon>
-              <Users size={22} color={theme.palette.success.main} />
-            </ListItemIcon>
-            <ListItemText primary="Comparison" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton sx={{ borderRadius: '0 24px 24px 0', mx: 1 }}>
-            <ListItemIcon>
-              <DollarSign size={22} color={theme.palette.warning.main} />
-            </ListItemIcon>
-            <ListItemText primary="Crypto Tracker" />
-          </ListItemButton>
-        </ListItem>
-      </List>
-      
+      {/* <List>
+        Navigation items - removed for brevity, add back if needed
+      </List> */}
+
       <Divider sx={{ my: 2 }} />
-      
+
       <Box sx={{ px: 2.5, py: 1.5 }}>
         <Typography variant="subtitle2" color="textSecondary" fontWeight="bold">
-          TRACKED ACCOUNTS
+          COMPANIES
         </Typography>
       </Box>
-      
+
       <List>
-        {mockTrackedAccounts.map((account) => (
-          <ListItem key={account.username} disablePadding>
-            <ListItemButton 
-              onClick={() => onSelectAccount(account.username)}
-              sx={{ borderRadius: '0 24px 24px 0', mx: 1 }}
-            >
-              <ListItemIcon>
-                <Avatar 
-                  src={`https://unavatar.io/twitter/${account.username}`}
-                  alt={account.username}
-                  sx={{ width: 28, height: 28 }}
+        {companies.map((company) => {
+          const logoURL = getLogoURL(company.name);
+          return (
+            <ListItem key={company.id} disablePadding>
+              <ListItemButton
+                selected={selectedCompanyId === company.id}
+                onClick={() => onSelectCompany(company)}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <Avatar
+                    src={logoURL}
+                    alt={company.name.charAt(0)}
+                    sx={{ width: 28, height: 28, bgcolor: theme.palette.primary.light, fontSize: '0.8rem' }}
+                    imgProps={{ onError: (e: any) => { e.target.src = ''; } }} // Handle logo load errors
+                  >
+                    {company.name.charAt(0)}
+                  </Avatar>
+                </ListItemIcon>
+                <ListItemText
+                  primary={company.name}
+                  primaryTypographyProps={{
+                    noWrap: true,
+                    variant: 'body2',
+                    fontWeight: selectedCompanyId === company.id ? 'bold' : 'medium',
+                  }}
                 />
-              </ListItemIcon>
-              <ListItemText 
-                primary={`@${account.username}`}
-                primaryTypographyProps={{
-                  noWrap: true,
-                  variant: 'body2',
-                }}
-              />
-              <Tooltip title="Favorited account">
-                <Badge>
-                  <Star size={16} color={theme.palette.warning.main} />
-                </Badge>
-              </Tooltip>
-            </ListItemButton>
-          </ListItem>
-        ))}
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
         <ListItem disablePadding>
-          <ListItemButton sx={{ borderRadius: '0 24px 24px 0', mx: 1 }}>
-            <ListItemIcon>
+          <ListItemButton 
+             // TODO: Implement add company functionality
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>
               <PlusCircle size={22} color={theme.palette.text.secondary} />
             </ListItemIcon>
-            <ListItemText 
-              primary="Add New Account" 
+            <ListItemText
+              primary="Add New Company"
               primaryTypographyProps={{
                 color: 'textSecondary',
                 variant: 'body2',
@@ -139,27 +144,27 @@ const Sidebar: React.FC<SidebarProps> = ({
           </ListItemButton>
         </ListItem>
       </List>
-      
+
       <Box sx={{ flexGrow: 1 }} />
-      
+
       <Divider />
       <List>
         <ListItem disablePadding>
-          <ListItemButton sx={{ borderRadius: '0 24px 24px 0', mx: 1 }}>
-            <ListItemIcon>
+          <ListItemButton>
+            <ListItemIcon sx={{ minWidth: 40 }}>
               <Settings size={22} color={theme.palette.text.secondary} />
             </ListItemIcon>
             <ListItemText primary="Settings" />
           </ListItemButton>
         </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton sx={{ borderRadius: '0 24px 24px 0', mx: 1 }}>
-            <ListItemIcon>
+         {/* <ListItem disablePadding>
+          <ListItemButton>
+            <ListItemIcon sx={{ minWidth: 40 }}>
               <Info size={22} color={theme.palette.text.secondary} />
             </ListItemIcon>
             <ListItemText primary="Help & Info" />
           </ListItemButton>
-        </ListItem>
+        </ListItem> */}
       </List>
     </>
   );
@@ -174,30 +179,26 @@ const Sidebar: React.FC<SidebarProps> = ({
         variant="temporary"
         open={mobileOpen}
         onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile
-        }}
+        ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': { 
-            boxSizing: 'border-box', 
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
             width: drawerWidth,
-            borderRight: `1px solid ${theme.palette.divider}`,
           },
         }}
       >
         {drawerContent}
       </Drawer>
-      
+
       {/* Desktop drawer */}
       <Drawer
         variant="permanent"
         sx={{
           display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': { 
-            boxSizing: 'border-box', 
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
             width: drawerWidth,
-            borderRight: `1px solid ${theme.palette.divider}`,
           },
         }}
         open

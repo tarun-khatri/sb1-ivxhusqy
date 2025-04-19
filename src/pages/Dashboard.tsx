@@ -1,42 +1,98 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Grid, Typography, Alert, Paper, Button } from '@mui/material';
-import { getAccountData } from '../mock/data';
-import { TwitterAccountData } from '../types';
-import ProfileCard from '../components/dashboard/ProfileCard';
-import FollowerStats from '../components/dashboard/FollowerStats';
-import TweetAnalysisCard from '../components/dashboard/TweetAnalysisCard';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Box,
+  Grid,
+  Typography,
+  Alert,
+  Paper,
+  Button,
+  CircularProgress,
+  TextField,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from '@mui/material';
+import { CompetitorData, Company, CryptoData } from '../types';
+import { fetchAllCompetitorData } from '../services/api';
 import CryptoCard from '../components/dashboard/CryptoCard';
 
 interface DashboardProps {
-  username: string | null;
+  selectedCompany: Company | null;
+  onUpdateCompany: (company: Company) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ username }) => {
-  const [accountData, setAccountData] = useState<TwitterAccountData | null>(null);
+const Dashboard: React.FC<DashboardProps> = ({ selectedCompany, onUpdateCompany }) => {
+  const [competitorData, setCompetitorData] = useState<CompetitorData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [editCmcIdOpen, setEditCmcIdOpen] = useState(false);
+  const [cmcIdInput, setCmcIdInput] = useState('');
 
-  useEffect(() => {
-    if (!username) return;
+  // --- Data Fetching Function (moved outside useEffect) ---
+  const fetchData = useCallback(async () => {
+    if (!selectedCompany) {
+      setCompetitorData(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     setError(null);
+    setCompetitorData(null);
 
-    // Simulate API call with setTimeout
-    setTimeout(() => {
-      const data = getAccountData(username);
-      
-      if (data) {
-        setAccountData(data);
-        setLoading(false);
-      } else {
-        setError(`Account @${username} not found. Try searching for another account.`);
-        setLoading(false);
-      }
-    }, 1000);
-  }, [username]);
+    try {
+      const data = await fetchAllCompetitorData(selectedCompany);
+      setCompetitorData(data);
+    } catch (err) {
+      console.error('Error fetching competitor data:', err);
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(`Failed to fetch data for ${selectedCompany.name}: ${message}. Please try again.`);
+      setCompetitorData(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedCompany]); // Dependency: selectedCompany
 
-  if (!username) {
+  // --- Initial Data Fetching ---
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]); // Dependency: fetchData ( useCallback makes this safe)
+
+  // --- CMC ID Edit Handlers ---
+  const handleEditCmcIdOpen = () => {
+    setCmcIdInput(selectedCompany?.cmcSymbolOrId || '');
+    setEditCmcIdOpen(true);
+  };
+
+  const handleEditCmcIdClose = () => {
+    setEditCmcIdOpen(false);
+  };
+
+  const handleCmcIdInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setCmcIdInput(event.target.value);
+  };
+
+  const handleUpdateCmcId = () => {
+    if (!selectedCompany) return;
+
+    // Create a new company object with the updated CMC ID
+    const updatedCompany: Company = { ...selectedCompany, cmcSymbolOrId: cmcIdInput };
+
+    // Call the onUpdateCompany handler to update the company data
+    onUpdateCompany(updatedCompany);
+
+    // Close the dialog
+    handleEditCmcIdClose();
+
+    // Re-fetch data to update the dashboard
+    fetchData();
+  };
+
+  // --- Render Logic ---
+
+  if (!selectedCompany) {
     return (
       <Box
         sx={{
@@ -50,13 +106,10 @@ const Dashboard: React.FC<DashboardProps> = ({ username }) => {
         }}
       >
         <Typography variant="h4" gutterBottom fontWeight="bold">
-          Twitter Competitor Analysis Dashboard
+          Competitor Analysis Dashboard
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 600, mb: 3 }}>
-          Enter a Twitter username in the search bar above to analyze their account metrics, follower growth, and tweet patterns.
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Try searching for: <Button size="small">elonmusk</Button>, <Button size="small">naval</Button>, or <Button size="small">Google</Button>
+          Select a company from the sidebar to analyze their social media presence across Twitter, LinkedIn, and Medium.
         </Typography>
       </Box>
     );
@@ -64,8 +117,9 @@ const Dashboard: React.FC<DashboardProps> = ({ username }) => {
 
   if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="body1">Loading data for @{username}...</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 5 }}>
+        <CircularProgress sx={{ mr: 2 }} />
+        <Typography variant="body1">Loading data for {selectedCompany.name}...</Typography>
       </Box>
     );
   }
@@ -80,30 +134,98 @@ const Dashboard: React.FC<DashboardProps> = ({ username }) => {
     );
   }
 
-  if (!accountData) return null;
+  if (!competitorData) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography>No data could be fetched for {selectedCompany.name}. Ensure identifiers are correct or try again later.</Typography>
+      </Box>
+    );
+  }
+
+  const hasAnyData = competitorData.twitter || competitorData.linkedIn || competitorData.medium || competitorData.cryptoData;
 
   return (
     <Box>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <ProfileCard profile={accountData.profile} />
-          {accountData.cryptoData && (
-            <CryptoCard data={accountData.cryptoData} />
+      <Typography variant="h4" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
+        Analysis for: {selectedCompany.name}
+      </Typography>
+
+      {!hasAnyData && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          No social media data could be retrieved for the configured identifiers for {selectedCompany.name}.
+        </Alert>
+      )}
+
+      {/* --- Edit CMC ID Button --- */}
+      <Button variant="outlined" onClick={handleEditCmcIdOpen} sx={{ mb: 2 }}>
+        Edit CMC ID
+      </Button>
+
+      {/* --- Crypto Section --- */}
+      {competitorData.cryptoData && (
+        <CryptoCard data={competitorData.cryptoData} />
+      )}
+
+      {hasAnyData && (
+        <Grid container spacing={3}>
+          {/* --- Twitter Section (Example) --- */}
+          {competitorData.twitter && (
+            <Grid item xs={12} md={6} lg={4}>
+              <Paper sx={{ p: 2, height: '100%' }}>
+                <Typography variant="h6" gutterBottom>Twitter / X</Typography>
+                <Typography variant="subtitle1">@{competitorData.twitter.profile.username}</Typography>
+                <Typography variant="body2">Followers: {competitorData.twitter.followerStats.current?.toLocaleString() || 'N/A'}</Typography>
+                <Typography variant="body2">Bio: {competitorData.twitter.profile.bio || 'N/A'}</Typography>
+              </Paper>
+            </Grid>
+          )}
+
+          {/* --- LinkedIn Section (Example) --- */}
+          {competitorData.linkedIn && (
+            <Grid item xs={12} md={6} lg={4}>
+              <Paper sx={{ p: 2, height: '100%' }}>
+                <Typography variant="h6" gutterBottom>LinkedIn</Typography>
+                <Typography variant="subtitle1">{competitorData.linkedIn.profile.displayName}</Typography>
+                <Typography variant="body2">Followers: {competitorData.linkedIn.followerStats?.current?.toLocaleString() || 'N/A'}</Typography>
+                <Typography variant="body2">Bio: {competitorData.linkedIn.profile.bio || 'N/A'}</Typography>
+              </Paper>
+            </Grid>
+          )}
+
+          {/* --- Medium Section (Example) --- */}
+          {competitorData.medium && (
+            <Grid item xs={12} md={6} lg={4}>
+              <Paper sx={{ p: 2, height: '100%' }}>
+                <Typography variant="h6" gutterBottom>Medium</Typography>
+                <Typography variant="subtitle1">{competitorData.medium.profile.displayName}</Typography>
+                <Typography variant="body2">Followers: {competitorData.medium.followerStats?.current?.toLocaleString() || 'N/A'}</Typography>
+                <Typography variant="body2">Bio: {competitorData.medium.profile.bio || 'N/A'}</Typography>
+              </Paper>
+            </Grid>
           )}
         </Grid>
-        
-        <Grid item xs={12} md={8}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <FollowerStats stats={accountData.followerStats} />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TweetAnalysisCard analysis={accountData.tweetAnalysis} />
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
+      )}
+
+      {/* --- Edit CMC ID Dialog --- */}
+      <Dialog open={editCmcIdOpen} onClose={handleEditCmcIdClose}>
+        <DialogTitle>Edit CoinMarketCap ID</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="cmcId"
+            label="CoinMarketCap Symbol or ID"
+            type="text"
+            fullWidth
+            value={cmcIdInput}
+            onChange={handleCmcIdInputChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditCmcIdClose}>Cancel</Button>
+          <Button onClick={handleUpdateCmcId}>Update</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
