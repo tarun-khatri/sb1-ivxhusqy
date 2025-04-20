@@ -7,8 +7,10 @@ import {
   ContentAnalysis,
   Company, 
   CryptoData,
-  CompetitorData
+  CompetitorData,
+  Post
 } from '../types';
+import axios from 'axios';
 
 // --- Placeholder API Functions ---
 // These functions simulate fetching data for each platform.
@@ -17,158 +19,195 @@ import {
 // MOCK DELAY - Simulate network latency
 const MOCK_API_DELAY = 800; // milliseconds
 
+
 // --- Twitter/X Data Fetching ---
 export async function fetchTwitterData(username: string, companyName: string): Promise<TwitterData | null> {
-  if (!username) return null;
+  if (!username) {
+    console.warn('No Twitter username provided');
+    return null;
+  }
 
-  console.log(`Simulating API call to fetch Twitter data for @${username}`);
-  await new Promise(resolve => setTimeout(resolve, MOCK_API_DELAY));
+  console.log(`Fetching Twitter data from RapidAPI for @${username}`);
 
-  // Simulate success or failure (e.g., 90% success rate)
-  if (Math.random() < 0.9) {
-    // Mock successful response
-    const mockProfile: SocialProfile = {
+  try {
+    const options = {
+      method: 'GET',
+      url: 'https://twitter154.p.rapidapi.com/user/details',
+      params: {
+        username: username
+        // user_id is optional in the API, username should suffice
+      },
+      headers: {
+        'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
+        'X-RapidAPI-Host': 'twitter154.p.rapidapi.com'
+      }
+    };
+
+    const response = await axios.request(options);
+    const data = response.data;
+
+    if (!data) {
+      console.warn(`No Twitter data found for @${username}`);
+      return null;
+    }
+
+    console.log("Received Twitter User Detail Data:", JSON.stringify(data, null, 2));
+
+    // Process the data to fit the TwitterData type based on provided response
+    const profile: SocialProfile = {
       platform: 'Twitter',
-      username: username,
-      displayName: `${companyName} (X)`,
-      profileImage: `https://unavatar.io/twitter/${username}`,
-      bio: `Mock bio for ${companyName} on Twitter/X. Analyzing the competition.`,
-      location: 'Mock Location',
-      url: `https://twitter.com/${username}`,
-      followers: Math.floor(Math.random() * 100000) + 1000,
-      following: Math.floor(Math.random() * 1000) + 50,
-      postsCount: Math.floor(Math.random() * 5000) + 200,
-      joinedDate: '2023-01-15',
+      username: data.username,
+      displayName: data.name,
+      profileImage: data.profile_pic_url,
+      bio: data.description,
+      location: data.location,
+      url: `https://twitter.com/${data.username}`,
+      followers: data.follower_count,
+      following: data.following_count,
+      postsCount: data.number_of_tweets,
+      joinedDate: data.creation_date
     };
 
-    const mockFollowerStats: FollowerStats = {
-      current: mockProfile.followers,
-      oneDayChange: { count: Math.floor(Math.random() * 200) - 100, percentage: Math.random() * 2 - 1 },
-      oneWeekChange: { count: Math.floor(Math.random() * 1000) - 500, percentage: Math.random() * 5 - 2.5 },
-      oneMonthChange: { count: Math.floor(Math.random() * 5000) - 2500, percentage: Math.random() * 10 - 5 },
-      history: [
-        { date: '2024-07-10', count: (mockProfile.followers || 0) - 2500 },
-        { date: '2024-07-17', count: (mockProfile.followers || 0) - 1500 },
-        { date: '2024-07-24', count: (mockProfile.followers || 0) - 500 },
-        { date: '2024-07-31', count: mockProfile.followers || 0 },
-      ],
+    const followerStats: FollowerStats = {
+      current: data.follower_count
+      // Add other follower stats if available from the API
     };
 
-    const mockAnalysis: ContentAnalysis = {
-       averageEngagement: Math.random() * 0.05, // 0-5% engagement rate
-       postsPerPeriod: Math.random() * 5 + 1, // 1-6 posts per day (mock)
-       sentimentBreakdown: { positive: 0.6, negative: 0.1, neutral: 0.3 }
+    const analysis: ContentAnalysis = {
+      // Add content analysis if available from the API
     };
 
     return {
-      profile: mockProfile,
-      followerStats: mockFollowerStats,
-      contentAnalysis: mockAnalysis,
+      profile: profile,
+      followerStats: followerStats,
+      contentAnalysis: analysis
     };
-  } else {
-    // Mock failure
-    console.error(`Mock API Error: Could not fetch Twitter data for @${username}`);
+
+  } catch (error) {
+    console.error('Error fetching Twitter data:', error);
     return null;
-    // OR: throw new Error('Failed to fetch Twitter data'); // depending on how you handle errors
   }
 }
 
 // --- LinkedIn Data Fetching ---
 export async function fetchLinkedInData(identifier: string, companyName: string): Promise<LinkedInData | null> {
-  if (!identifier) return null;
+  if (!identifier) {
+    console.warn('No LinkedIn identifier provided');
+    return null;
+  }
 
-  console.log(`Simulating API call to fetch LinkedIn data for identifier: ${identifier}`);
-  await new Promise(resolve => setTimeout(resolve, MOCK_API_DELAY + 200)); // Slightly longer delay
+  console.log(`Fetching LinkedIn posts from RapidAPI for ${identifier}`);
 
-  // LinkedIn data is harder to get, simulate lower success or less data
-  if (Math.random() < 0.7) { 
-    const mockProfile: SocialProfile = {
+  const options = {
+    method: 'GET',
+    url: 'https://linkedin-data-api.p.rapidapi.com/get-company-posts',
+    params: {
+      username: identifier, // Use the company's LinkedIn username/handle
+      start: '0'
+    },
+    headers: {
+      'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
+      'X-RapidAPI-Host': 'linkedin-data-api.p.rapidapi.com'
+    }
+  };
+
+  try {
+    const response = await axios.request(options);
+    const responseData = response.data;
+
+    if (!responseData || !responseData.success || !responseData.data || responseData.data.length === 0) {
+        console.warn(`No LinkedIn posts found for ${identifier}`);
+        // Still return basic profile structure even if no posts are found
+    }
+
+    const posts: Post[] = responseData.data ? responseData.data.map((post: any) => ({
+        id: post.urn, // Using URN as ID
+        platform: 'LinkedIn',
+        authorName: post.author?.firstName ? `${post.author.firstName} ${post.author.lastName}` : post.company?.name || companyName,
+        authorAvatar: '' ,// API doesn't seem to provide this
+        text: post.text,
+        media: post.video ? [{ type: 'video', url: post.video[0]?.url }] : (post.image ? post.image.map((img: any) => ({ type: 'image', url: img.url })) : []),
+        date: post.postedAt, // Relative date, may need conversion
+        postUrl: post.postUrl,
+        likes: post.likeCount,
+        comments: post.commentsCount,
+        reposts: post.repostsCount,
+        engagement: post.totalReactionCount, // Using totalReactionCount as engagement
+        sentiment: 'neutral' // Placeholder, sentiment analysis would require additional logic/API
+    })) : [];
+
+    // Create placeholder profile data as this endpoint focuses on posts
+    const profile: SocialProfile = {
       platform: 'LinkedIn',
       profileId: identifier,
-      displayName: `${companyName} (LinkedIn)`,
-      profileImage: `https://unavatar.io/linkedin/${identifier}`, // May not work for company pages
-      bio: `Mock company description for ${companyName} on LinkedIn. Focus on professional networking.`,
-      url: `https://www.linkedin.com/company/${identifier}`, // Example URL structure
-      followers: Math.floor(Math.random() * 50000) + 500,
-      postsCount: Math.floor(Math.random() * 1000) + 50,
+      displayName: companyName, // Assuming companyName is passed correctly
+      profileImage: '' ,// Placeholder - Not provided by this endpoint
+      bio: '' ,// Placeholder - Not provided by this endpoint
+      url: `https://www.linkedin.com/company/${identifier}/`,
+      followers: undefined, // Placeholder - Not provided by this endpoint
+      postsCount: posts.length // Can estimate from the posts fetched
     };
 
-    // Mock limited follower stats if available
-    const mockFollowerStats: FollowerStats = {
-        current: mockProfile.followers,
-        // LinkedIn API might not provide detailed history easily
+    const followerStats: FollowerStats = {
+      current: undefined // Placeholder - Not provided by this endpoint
+    };
+    
+    const contentAnalysis: ContentAnalysis = {
+        recentArticles: posts
     };
 
     return {
-      profile: mockProfile,
-      followerStats: mockFollowerStats,
-      // Content analysis might be very limited or unavailable
+      profile: profile,
+      followerStats: followerStats,
+      contentAnalysis: contentAnalysis
     };
-  } else {
-    console.error(`Mock API Error: Could not fetch LinkedIn data for ${identifier}`);
+
+  } catch (error) {
+    console.error('Error fetching LinkedIn data:', error);
     return null;
   }
 }
 
 // --- Medium Data Fetching ---
 export async function fetchMediumData(username: string, companyName: string): Promise<MediumData | null> {
-  if (!username) return null;
+
+  if (!username) {
+    console.warn('No Medium username provided');
+    return null;
+  }
 
   console.log(`Simulating API call to fetch Medium data for @${username}`);
-  await new Promise(resolve => setTimeout(resolve, MOCK_API_DELAY + 100));
 
-  if (Math.random() < 0.8) {
-    const mockProfile: SocialProfile = {
-      platform: 'Medium',
-      username: username,
-      displayName: `${companyName} (Medium Blog)`,
-      profileImage: `https://unavatar.io/medium/${username}`,
-      bio: `Mock bio for ${companyName}'s Medium publication/author page. Sharing insights and stories.`,
-      url: `https://medium.com/@${username}`, // Or publication URL
-      followers: Math.floor(Math.random() * 20000) + 200, // Publication followers
-      postsCount: Math.floor(Math.random() * 500) + 10,
-    };
-    
-    // Mock limited data
-     const mockFollowerStats: FollowerStats = {
-        current: mockProfile.followers,
-    };
+ 
 
-    return {
-      profile: mockProfile,
-      followerStats: mockFollowerStats,
-      // Maybe fetch recent post titles later
-    };
-  } else {
-    console.error(`Mock API Error: Could not fetch Medium data for @${username}`);
+  try {
+   return null; 
+
+
+  } catch (error) {
+    console.error('Error fetching Medium data:', error);
     return null;
   }
 }
 
 // --- Crypto Data Fetching ---
 export async function fetchCryptoDataBySymbolOrId(symbolOrId: string): Promise<CryptoData | null> {
-  if (!symbolOrId) return null;
-
-  console.log(`Simulating API call to fetch Crypto data for ${symbolOrId}`);
-  await new Promise(resolve => setTimeout(resolve, MOCK_API_DELAY));
-
-  if (Math.random() < 0.9) {
-    // Mock successful response
-    const mockCryptoData: CryptoData = {
-      id: symbolOrId,
-      name: `Mock ${symbolOrId} Token`,
-      symbol: symbolOrId,
-      currentPrice: Math.random() * 150 + 0.5, // Random price between 0.5 and 150.5
-      priceChange24h: Math.random() * 10 - 5, // Random change between -5 and 5
-      priceChangePercentage24h: Math.random() * 5 - 2.5, // Random percentage change
-      marketCap: Math.floor(Math.random() * 1000000000) + 1000000,
-      volume24h: Math.floor(Math.random() * 1000000) + 1000
-    };
-    return mockCryptoData;
-  } else {
-    console.error(`Mock API Error: Could not fetch Crypto data for ${symbolOrId}`);
-    return null;
+  if (!symbolOrId) {
+      console.warn('No Crypto symbolOrId provided');
+      return null;
   }
+
+  console.log(`Fetching Crypto data from CoinMarketCap for ${symbolOrId}`);
+
+   try {
+        // Replace with actual CMC API call using process.env.CMC_API_KEY
+        // Remember to map the response correctly to CryptoData type
+
+        return null;
+    } catch (error) {
+        console.error(`Error fetching Crypto data for ${symbolOrId}:`, error);
+        return null;
+    }
 }
 
 // --- Combined Fetch Function (used by Dashboard) ---

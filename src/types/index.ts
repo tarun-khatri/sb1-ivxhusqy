@@ -60,6 +60,7 @@ export interface ContentAnalysis {
   averageEngagement?: number;
   postsPerPeriod?: number; // e.g., per day or week
   postTypes?: { [type: string]: number }; // e.g., text, image, video
+  recentPosts?: Post[]; // Added optional property for recent posts
 }
 
 // --- Platform Specific Types ---
@@ -68,21 +69,20 @@ export interface TwitterData {
   profile: SocialProfile;
   followerStats: FollowerStats;
   contentAnalysis: ContentAnalysis;
-  // Removed crypto-specific fields from here
 }
 
 export interface LinkedInData {
   profile: SocialProfile; // Can be Company or Personal Profile
   followerStats?: FollowerStats; // For Company pages
-  contentAnalysis?: ContentAnalysis;
-  recentArticles?: Post[]; // Specific to LinkedIn?
+  contentAnalysis?: ContentAnalysis; // Now includes recentPosts
+  // Removed recentArticles specific property
 }
 
 export interface MediumData {
   profile: SocialProfile; // Can be Author or Publication Profile
   followerStats?: FollowerStats; // For Publications
-  contentAnalysis?: ContentAnalysis;
-  recentPosts?: Post[];
+  contentAnalysis?: ContentAnalysis; // Now includes recentPosts
+  // Removed recentPosts specific property here as it's part of ContentAnalysis
 }
 
 // --- Crypto Data Type ---
@@ -95,7 +95,6 @@ export interface CryptoData {
   priceChangePercentage24h: number;
   marketCap?: number;
   volume24h?: number;
-  // Add other relevant fields from CMC or other crypto APIs
 }
 
 // --- Dashboard State & Props ---
