@@ -1,17 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
-  Toolbar,
-  Typography,
-  IconButton,
   Box,
-  useTheme,
+  Toolbar,
+  IconButton,
+  Typography,
   InputBase,
-  alpha,
   Button,
+  useTheme,
+  alpha,
 } from '@mui/material';
-import { Menu, X, Search, Twitter, Moon, Sun } from 'lucide-react';
-import { useThemeContext } from '../../theme/ThemeProvider';
+import { Menu, Search } from 'lucide-react';
 
 interface HeaderProps {
   mobileOpen: boolean;
@@ -21,14 +20,11 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ mobileOpen, handleDrawerToggle, onSearch }) => {
   const theme = useTheme();
-  const { mode, toggleColorMode } = useThemeContext();
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValue] = useState('');
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchValue.trim()) {
-      onSearch(searchValue);
-    }
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
+    onSearch(searchValue);
   };
 
   return (
@@ -36,38 +32,41 @@ const Header: React.FC<HeaderProps> = ({ mobileOpen, handleDrawerToggle, onSearc
       position="fixed" 
       sx={{ 
         zIndex: theme.zIndex.drawer + 1,
-        boxShadow: 1,
         backgroundColor: theme.palette.background.paper,
         color: theme.palette.text.primary,
       }}
+      elevation={1}
     >
-      <Toolbar>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          edge="start"
-          onClick={handleDrawerToggle}
-          sx={{ mr: 2, display: { sm: 'none' } }}
-        >
-          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-        </IconButton>
-        
+      <Toolbar sx={{ justifyContent: 'space-between' }}>
+        {/* Left section with menu and title */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Twitter size={28} color={theme.palette.primary.main} />
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { sm: 'none' } }}
+          >
+            <Menu />
+          </IconButton>
           <Typography
-            variant="h6"
+            variant="h5"
             noWrap
             component="div"
-            sx={{ 
-              ml: 1.5, 
-              fontWeight: 'bold',
-              display: { xs: 'none', sm: 'block' } 
+            sx={{
+              fontWeight: 700,
+              letterSpacing: 1,
+              background: 'linear-gradient(45deg, #FF6B6B, #4ECDC4)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0px 2px 4px rgba(0,0,0,0.1)',
             }}
           >
-            Competitor Analysis
+            Black Mirror v0
           </Typography>
         </Box>
-        
+
+        {/* Center section with search */}
         <Box 
           component="form" 
           onSubmit={handleSearch}
@@ -78,26 +77,31 @@ const Header: React.FC<HeaderProps> = ({ mobileOpen, handleDrawerToggle, onSearc
             '&:hover': {
               backgroundColor: alpha(theme.palette.common.black, 0.1),
             },
-            marginRight: theme.spacing(2),
-            marginLeft: theme.spacing(3),
-            width: { xs: '100%', sm: 'auto' },
-            maxWidth: { xs: '100%', sm: '400px' },
-            flexGrow: 1,
+            width: { xs: '100%', sm: '400px' },
+            mx: 'auto',
           }}
         >
-          <Box sx={{ padding: theme.spacing(0, 2), height: '100%', position: 'absolute', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Box sx={{ 
+            padding: theme.spacing(0, 2), 
+            height: '100%', 
+            position: 'absolute', 
+            pointerEvents: 'none', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}>
             <Search size={20} color={theme.palette.text.secondary} />
           </Box>
           <InputBase
-            placeholder="Search Twitter username..."
+            placeholder="Search companies..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             sx={{
               color: 'inherit',
+              width: '100%',
               '& .MuiInputBase-input': {
                 padding: theme.spacing(1, 1, 1, 0),
                 paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-                transition: theme.transitions.create('width'),
                 width: '100%',
               },
             }}
@@ -120,11 +124,10 @@ const Header: React.FC<HeaderProps> = ({ mobileOpen, handleDrawerToggle, onSearc
             Search
           </Button>
         </Box>
-        
-        <Box sx={{ flexGrow: 0 }}>
-          <IconButton sx={{ ml: 1 }} onClick={toggleColorMode} color="inherit">
-            {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          </IconButton>
+
+        {/* Right section - can be used for dark mode toggle */}
+        <Box sx={{ width: { xs: 'auto', sm: '100px' }, display: 'flex', justifyContent: 'flex-end' }}>
+          {/* Dark mode toggle will be added here */}
         </Box>
       </Toolbar>
     </AppBar>

@@ -1,47 +1,66 @@
 import React, { useState } from 'react';
-import { ThemeProvider } from './theme/ThemeProvider';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import theme from './theme';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
-import { Company } from './types'; // Import the Company type
+import DetailedMetricsView from './components/dashboard/DetailedMetricsView';
+import { Company } from './types';
 
-function App() {
-  // State now holds the selected Company object
+// Wrapper component to use hooks in the router context
+const AppContent: React.FC = () => {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-
-  const handleSearch = (query: string) => {
-    // TODO: Implement search logic if needed. 
-    console.log('Search triggered:', query);
-  };
+  const navigate = useNavigate();
 
   const handleSelectCompany = (company: Company) => {
     setSelectedCompany(company);
+    // Navigate to the metrics page for the selected company
+    navigate(`/metrics/${company.id}`);
   };
 
-  // Function to handle updates to the company (e.g., CMC ID change)
-  // This would typically involve updating a central state store or API
-  // For now, just update the selected company in local state
-  const handleUpdateCompany = (updatedCompany: Company) => {
-    if (selectedCompany && selectedCompany.id === updatedCompany.id) {
-      setSelectedCompany(updatedCompany);
-    }
-    // TODO: Update the master list of companies (e.g., in Sidebar state or a context)
+  const handleSearch = (query: string) => {
+    // Implement search functionality if needed
+    console.log('Search query:', query);
   };
 
   return (
-    <ThemeProvider>
-      <Layout 
-        onSearch={handleSearch} 
-        onSelectCompany={handleSelectCompany}
-        selectedCompanyId={selectedCompany?.id} // Pass the selected company ID
-      >
-        {/* Pass the selected company and the update handler to the Dashboard */}
-        <Dashboard 
-          selectedCompany={selectedCompany} 
-          onUpdateCompany={handleUpdateCompany} 
+    <Layout 
+      onSearch={handleSearch}
+      onSelectCompany={handleSelectCompany}
+      selectedCompanyId={selectedCompany?.id || null}
+    >
+      <Routes>
+        <Route 
+          path="/" 
+          element={
+            <Dashboard 
+              selectedCompany={selectedCompany}
+              onSelectCompany={handleSelectCompany}
+            />
+          } 
         />
-      </Layout>
+        <Route 
+          path="/metrics/:id" 
+          element={
+            <DetailedMetricsView 
+              selectedCompany={selectedCompany}
+            />
+          } 
+        />
+      </Routes>
+    </Layout>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <AppContent />
+      </Router>
     </ThemeProvider>
   );
-}
+};
 
 export default App;

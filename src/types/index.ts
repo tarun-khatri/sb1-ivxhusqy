@@ -50,17 +50,17 @@ export interface Post {
 }
 
 export interface ContentAnalysis {
-  mostEngagingPost?: Post;
-  frequentWords?: { word: string; count: number }[];
-  sentimentBreakdown?: {
-    positive: number;
-    negative: number;
-    neutral: number;
+  recentPosts?: Post[];
+  metrics?: {
+    engagementRate: number; // Engagement rate as percentage
+    avgEngagementRate: number; // Average engagements per post
+    replies24h: number;
+    replies7d: number;
+    totalLikes: number;
+    totalRetweets: number;
+    totalReplies: number;
+    recentTweetsCount: number;
   };
-  averageEngagement?: number;
-  postsPerPeriod?: number; // e.g., per day or week
-  postTypes?: { [type: string]: number }; // e.g., text, image, video
-  recentPosts?: Post[]; // Added optional property for recent posts
 }
 
 // --- Platform Specific Types ---
@@ -83,6 +83,28 @@ export interface MediumData {
   followerStats?: FollowerStats; // For Publications
   contentAnalysis?: ContentAnalysis; // Now includes recentPosts
   // Removed recentPosts specific property here as it's part of ContentAnalysis
+}
+
+// --- Onchain Data Type ---
+export interface OnchainData {
+  profile: {
+    name: string;
+    description: string;
+    logo?: string;
+    website?: string;
+  };
+  metrics: {
+    totalTransactions: number;
+    transactionGrowth24h: number;
+    transactionGrowth7d: number;
+    activeWallets: number;
+    activeWalletsGrowth24h: number;
+    averageTransactionValue: number;
+  };
+  recentActivity: {
+    transactions24h: number;
+    uniqueAddresses24h: number;
+  };
 }
 
 // --- Crypto Data Type ---
@@ -115,4 +137,5 @@ export interface CompetitorData {
   linkedIn?: LinkedInData | null;
   medium?: MediumData | null;
   cryptoData?: CryptoData | null; // Added field for crypto data
+  onchainData?: OnchainData | null; // Added field for onchain data
 }

@@ -14,8 +14,8 @@ import {
   DialogTitle,
 } from '@mui/material';
 import { CompetitorData, Company, CryptoData } from '../types';
-import { fetchAllCompetitorData } from '../services/api';
-import CryptoCard from '../components/dashboard/CryptoCard';
+import { fetchAllCompetitorData } from '../services/competitorApi';
+import { CryptoCard, TwitterCard } from '../components/cards';
 
 interface DashboardProps {
   selectedCompany: Company | null;
@@ -146,20 +146,11 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedCompany, onUpdateCompany 
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
-        Analysis for: {selectedCompany.name}
-      </Typography>
-
       {!hasAnyData && (
         <Alert severity="info" sx={{ mb: 3 }}>
           No social media data could be retrieved for the configured identifiers for {selectedCompany.name}.
         </Alert>
       )}
-
-      {/* --- Edit CMC ID Button --- */}
-      <Button variant="outlined" onClick={handleEditCmcIdOpen} sx={{ mb: 2 }}>
-        Edit CMC ID
-      </Button>
 
       {/* --- Crypto Section --- */}
       {competitorData.cryptoData && (
@@ -168,15 +159,10 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedCompany, onUpdateCompany 
 
       {hasAnyData && (
         <Grid container spacing={3}>
-          {/* --- Twitter Section (Example) --- */}
+          {/* --- Twitter Section (Beautiful Card) --- */}
           {competitorData.twitter && (
-            <Grid item xs={12} md={6} lg={4}>
-              <Paper sx={{ p: 2, height: '100%' }}>
-                <Typography variant="h6" gutterBottom>Twitter / X</Typography>
-                <Typography variant="subtitle1">@{competitorData.twitter.profile.username}</Typography>
-                <Typography variant="body2">Followers: {competitorData.twitter.followerStats.current?.toLocaleString() || 'N/A'}</Typography>
-                <Typography variant="body2">Bio: {competitorData.twitter.profile.bio || 'N/A'}</Typography>
-              </Paper>
+            <Grid item xs={12}>
+              <TwitterCard data={competitorData.twitter} />
             </Grid>
           )}
 
