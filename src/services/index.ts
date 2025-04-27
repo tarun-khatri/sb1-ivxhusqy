@@ -2,7 +2,6 @@ export * from './onchainApi';
 export * from './twitterApi';
 export * from './linkedInApi';
 export * from './mediumApi';
-export * from './cryptoApi';
 
 /**
  * Fetches DefiLlama revenue data for a company

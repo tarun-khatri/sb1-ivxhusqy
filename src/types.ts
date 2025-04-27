@@ -35,6 +35,7 @@ export interface Company {
     twitter?: string;
     linkedin?: string;
     medium?: string;
+    defillama?: string;
   };
   cmcSymbolOrId?: string;
   onchainAddress?: string;

@@ -35,10 +35,11 @@ const mockCompanies: Company[] = [
     name: 'Phantom',
     identifiers: {
       twitter: 'phantom',
-      linkedIn: 'phantom-xyz',
+      linkedin: 'phantomwallet',
       medium: 'phantom-blog',
+      defillama: 'phantom', // Added DefiLlama protocol identifier
+      //cmcSymbolOrId: 'SOL', // Added example CMC symbol (Solana, as Phantom is a Solana wallet)
     },
-    cmcSymbolOrId: 'SOL', // Added example CMC symbol (Solana, as Phantom is a Solana wallet)
   },
   // Add more companies here as needed
 ];

@@ -1,4 +1,4 @@
-import { TwitterData, SocialProfile, FollowerStats, ContentAnalysis, Post } from '../types';
+import { TwitterData, SocialProfile, FollowerStats, ContentAnalysis, Post } from '../types/index';
 import axios from 'axios';
 
 const RAPIDAPI_HOST = 'twitter154.p.rapidapi.com';
@@ -10,31 +10,31 @@ const api = axios.create({
   }
 });
 
-async function fetchUserDetails(username: string): Promise<any> {
-  try {
-    const response = await api.get('https://twitter154.p.rapidapi.com/user/details', {
-      params: { username }
-    });
-    console.log('User details response:', response.data); // Debug log
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching user details:', error);
-    throw error;
-  }
-}
+// async function fetchUserDetails(username: string): Promise<any> {
+//   try {
+//     const response = await api.get('https://twitter154.p.rapidapi.com/user/details', {
+//       params: { username }
+//     });
+//     console.log('User details response:', response.data); // Debug log
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error fetching user details:', error);
+//     throw error;
+//   }
+// }
 
-async function fetchUserTweets(username: string): Promise<any> {
-  try {
-    const response = await api.get('https://twitter154.p.rapidapi.com/user/tweets', {
-      params: { username, limit: '100' }
-    });
-    console.log('User tweets response:', response.data); // Debug log
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching user tweets:', error);
-    throw error;
-  }
-}
+// async function fetchUserTweets(username: string): Promise<any> {
+//   try {
+//     const response = await api.get('https://twitter154.p.rapidapi.com/user/tweets', {
+//       params: { username, limit: '100' }
+//     });
+//     console.log('User tweets response:', response.data); // Debug log
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error fetching user tweets:', error);
+//     throw error;
+//   }
+// }
 
 async function calculateEngagementMetrics(tweets: any[], followerCount: number): Promise<{
   engagementRate: number;

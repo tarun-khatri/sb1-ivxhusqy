@@ -71,11 +71,78 @@ export interface TwitterData {
   contentAnalysis: ContentAnalysis;
 }
 
+export interface LinkedInPost {
+  text: string;
+  totalReactionCount: number;
+  likeCount: number;
+  appreciationCount?: number;
+  empathyCount?: number;
+  InterestCount?: number;
+  praiseCount?: number;
+  commentsCount: number;
+  repostsCount: number;
+  postUrl: string;
+  postedAt: string;
+  urn: string;
+  author?: {
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    url?: string;
+  };
+  company?: {
+    name: string;
+    url: string;
+    urn: string;
+  };
+}
+
+export interface LinkedInCompanyData {
+  id: string;
+  name: string;
+  universalName: string;
+  linkedinUrl: string;
+  tagline: string;
+  description: string;
+  Images: {
+    logo: string;
+    cover: string;
+  };
+  staffCount: number;
+  headquarter: {
+    countryCode: string;
+    geographicArea: string;
+    country: string;
+    city: string;
+    description: string;
+    headquarter: boolean;
+  };
+  locations: Array<{
+    countryCode: string;
+    geographicArea: string;
+    country: string;
+    city: string;
+    description: string;
+    headquarter: boolean;
+  }>;
+  industries: string[];
+  website: string;
+  founded: {
+    year: number;
+  };
+  followerCount: number;
+  staffCountRange: string;
+}
+
+export interface LinkedInApiResponse {
+  success: boolean;
+  message: string;
+  data: LinkedInCompanyData | LinkedInPost[];
+}
+
 export interface LinkedInData {
-  profile: SocialProfile; // Can be Company or Personal Profile
-  followerStats?: FollowerStats; // For Company pages
-  contentAnalysis?: ContentAnalysis; // Now includes recentPosts
-  // Removed recentArticles specific property
+  companyProfile: LinkedInApiResponse;
+  posts: LinkedInApiResponse;
 }
 
 export interface MediumData {
@@ -83,6 +150,23 @@ export interface MediumData {
   followerStats?: FollowerStats; // For Publications
   contentAnalysis?: ContentAnalysis; // Now includes recentPosts
   // Removed recentPosts specific property here as it's part of ContentAnalysis
+}
+
+// --- GitHub Data Type ---
+export interface GitHubData {
+  profile: {
+    username: string;
+    name: string;
+    followers: number;
+    following: number;
+    publicRepos: number;
+    avatarUrl: string;
+  };
+  metrics?: {
+    stars: number;
+    forks: number;
+    watchers: number;
+  };
 }
 
 // --- Onchain Data Type ---
@@ -128,7 +212,10 @@ export interface Company {
     twitter?: string; // username
     linkedIn?: string; // Company page ID/URL or Personal profile ID/URL
     medium?: string; // username or publication slug
+    github?: string; // GitHub username
+    defillama?: string; // DefiLlama protocol identifier
   };
+  onchainAddress?: string; // Added field for onchain address
   cmcSymbolOrId?: string; // Added field for CMC token identifier
 }
 
@@ -138,4 +225,5 @@ export interface CompetitorData {
   medium?: MediumData | null;
   cryptoData?: CryptoData | null; // Added field for crypto data
   onchainData?: OnchainData | null; // Added field for onchain data
+  github?: GitHubData | null; // Added field for GitHub data
 }

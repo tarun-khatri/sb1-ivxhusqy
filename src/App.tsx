@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-route
 import theme from './theme';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
-import DetailedMetricsView from './components/dashboard/DetailedMetricsView';
+import { CompanyMetrics } from './components/dashboard/CompanyMetrics';
 import { Company } from './types';
 
 // Wrapper component to use hooks in the router context
@@ -35,16 +35,18 @@ const AppContent: React.FC = () => {
           element={
             <Dashboard 
               selectedCompany={selectedCompany}
-              onSelectCompany={handleSelectCompany}
+              onUpdateCompany={setSelectedCompany}
             />
           } 
         />
         <Route 
           path="/metrics/:id" 
           element={
-            <DetailedMetricsView 
-              selectedCompany={selectedCompany}
-            />
+            selectedCompany ? (
+              <CompanyMetrics 
+                company={selectedCompany}
+              />
+            ) : null
           } 
         />
       </Routes>

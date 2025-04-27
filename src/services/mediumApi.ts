@@ -1,4 +1,4 @@
-import { MediumData, SocialProfile, FollowerStats, ContentAnalysis, Post } from '../types';
+import { MediumData, SocialProfile, FollowerStats, ContentAnalysis, Post } from '../types/index';
 
 // Mock data for Medium metrics
 const mockMediumData: MediumData = {

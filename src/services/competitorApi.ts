@@ -1,49 +1,80 @@
-import { Company, CompetitorData } from '../types';
+import { Company } from '../types';
+import { CompetitorData } from '../types/index';
 import { fetchTwitterMetrics } from './twitterApi';
-import { fetchLinkedInMetrics } from './linkedInApi';
+import { fetchLinkedInData } from './linkedInApi';
 import { fetchMediumMetrics } from './mediumApi';
-import { fetchCryptoDataBySymbolOrId } from './cryptoApi';
+import { fetchOnchainMetrics } from './onchainApi';
 
 export async function fetchAllCompetitorData(company: Company): Promise<CompetitorData> {
   if (!company) {
-    return { twitter: null, linkedIn: null, medium: null, cryptoData: null };
+    console.log('No company provided to fetchAllCompetitorData');
+    return { twitter: null, linkedIn: null, medium: null, onchainData: null, cryptoData: null, github: null };
   }
 
   console.log(`--- Fetching all data for ${company.name} ---`);
+  console.log('Company identifiers:', company.identifiers);
 
   const twitterPromise = company.identifiers?.twitter 
     ? fetchTwitterMetrics(company.identifiers.twitter)
     : Promise.resolve(null);
     
-  const linkedInPromise = company.identifiers?.linkedIn 
-    ? fetchLinkedInMetrics(company.identifiers.linkedIn)
+  const linkedInPromise = company.identifiers?.linkedin 
+    ? fetchLinkedInData(company.identifiers.linkedin, company.name)
     : Promise.resolve(null);
     
   const mediumPromise = company.identifiers?.medium 
     ? fetchMediumMetrics(company.identifiers.medium)
     : Promise.resolve(null);
 
-  const cryptoPromise = company.cmcSymbolOrId
-    ? fetchCryptoDataBySymbolOrId(company.cmcSymbolOrId)
+  const onchainId = company.identifiers?.defillama || company.onchainAddress;
+  console.log('Onchain ID being used:', onchainId);
+  const onchainPromise = onchainId
+    ? fetchOnchainMetrics(onchainId)
     : Promise.resolve(null);
 
+  // For now, we'll return null for GitHub data
+  const githubPromise = Promise.resolve(null);
+
   try {
-    const [twitterResult, linkedInResult, mediumResult, cryptoResult] = await Promise.all([
+    console.log('Waiting for all API calls to complete...');
+    const [twitterResult, linkedInResult, mediumResult, onchainResult, githubResult] = await Promise.all([
       twitterPromise,
       linkedInPromise,
       mediumPromise,
-      cryptoPromise,
+      onchainPromise,
+      githubPromise,
     ]);
 
+    console.log('API results:');
+    console.log('- Twitter:', twitterResult ? 'Data received' : 'No data');
+    console.log('- LinkedIn:', linkedInResult ? 'Data received' : 'No data');
+    console.log('- Medium:', mediumResult ? 'Data received' : 'No data');
+    console.log('- Onchain:', onchainResult ? 'Data received' : 'No data');
+    console.log('- Onchain data details:', onchainResult);
+    console.log('- GitHub:', githubResult ? 'Data received' : 'No data');
+
     console.log(`--- Finished fetching for ${company.name} ---`);
-    return {
+    const result = {
       twitter: twitterResult,
       linkedIn: linkedInResult,
       medium: mediumResult,
-      cryptoData: cryptoResult,
+      onchainData: onchainResult,
+      cryptoData: null,
+      github: githubResult,
     };
+    
+    console.log('Returning competitor data:', result);
+    console.log('Onchain data in result:', result.onchainData);
+    return result;
   } catch (error) {
     console.error("Error in fetchAllCompetitorData:", error);
-    return { twitter: null, linkedIn: null, medium: null, cryptoData: null };
+    return { 
+      twitter: null, 
+      linkedIn: null, 
+      medium: null, 
+      onchainData: null,
+      cryptoData: null,
+      github: null
+    };
   }
-} 
+}
