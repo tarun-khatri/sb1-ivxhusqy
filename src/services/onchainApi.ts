@@ -1,5 +1,7 @@
 import axios from 'axios';
 import { OnchainData } from '../types';
+import { SocialMediaData, SocialProfile, FollowerStats, ContentAnalysis, Post } from '../types/index';
+import { fetchSocialMediaDataWithCache } from './socialMediaApi';
 
 const LLAMA_API_BASE_URL = 'https://api.llama.fi';
 
@@ -83,7 +85,11 @@ export const fetchOnchainMetrics = async (protocol: string): Promise<OnchainData
   }
 };
 
-export const formatNumber = (num: number): string => {
+export const formatNumber = (num: number | null | undefined): string => {
+  if (num === null || num === undefined) {
+    return '0';
+  }
+  
   if (num >= 1000000) {
     return (num / 1000000).toFixed(1) + 'M';
   } else if (num >= 1000) {
@@ -92,6 +98,46 @@ export const formatNumber = (num: number): string => {
   return num.toString();
 };
 
-export const formatPercentage = (num: number): string => {
+export const formatPercentage = (num: number | null | undefined): string => {
+  if (num === null || num === undefined) {
+    return '0%';
+  }
   return num.toFixed(1) + '%';
-}; 
+};
+
+/**
+ * Fetches onchain data for a given address
+ * @param address The blockchain address to fetch data for
+ * @param companyName The name of the company (for display purposes)
+ * @returns A promise that resolves to the onchain data
+ */
+export async function fetchOnchainData(address: string, companyName: string): Promise<SocialMediaData | null> {
+  if (!address) {
+    console.warn('No onchain address provided');
+    return null;
+  }
+
+  try {
+    // Use the unified API to fetch onchain data
+    const data = await fetchSocialMediaDataWithCache('Onchain', address, companyName);
+    
+    if (!data) {
+      console.warn('No onchain data returned from API');
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching onchain data:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetches onchain metrics for a given address in the social media data format
+ * @param address The blockchain address to fetch metrics for
+ * @returns A promise that resolves to the onchain metrics
+ */
+export async function fetchOnchainDataForSocialMedia(address: string): Promise<SocialMediaData | null> {
+  return fetchOnchainData(address, '');
+} 

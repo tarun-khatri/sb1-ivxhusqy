@@ -13,7 +13,7 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material';
-import { CompetitorData, Company, CryptoData } from '../types';
+import { CompetitorData, Company, CryptoData } from '../types/index';
 import { fetchAllCompetitorData } from '../services/competitorApi';
 import { CryptoCard, TwitterCard } from '../components/cards';
 
@@ -171,9 +171,9 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedCompany, onUpdateCompany 
             <Grid item xs={12} md={6} lg={4}>
               <Paper sx={{ p: 2, height: '100%' }}>
                 <Typography variant="h6" gutterBottom>LinkedIn</Typography>
-                <Typography variant="subtitle1">{competitorData.linkedIn.profile.displayName}</Typography>
-                <Typography variant="body2">Followers: {competitorData.linkedIn.followerStats?.current?.toLocaleString() || 'N/A'}</Typography>
-                <Typography variant="body2">Bio: {competitorData.linkedIn.profile.bio || 'N/A'}</Typography>
+                <Typography variant="subtitle1">{competitorData.linkedIn.companyProfile.data.name}</Typography>
+                <Typography variant="body2">Followers: {competitorData.linkedIn.companyProfile.data.followers.toLocaleString() || 'N/A'}</Typography>
+                <Typography variant="body2">Bio: {competitorData.linkedIn.companyProfile.data.description || 'N/A'}</Typography>
               </Paper>
             </Grid>
           )}
@@ -183,9 +183,9 @@ const Dashboard: React.FC<DashboardProps> = ({ selectedCompany, onUpdateCompany 
             <Grid item xs={12} md={6} lg={4}>
               <Paper sx={{ p: 2, height: '100%' }}>
                 <Typography variant="h6" gutterBottom>Medium</Typography>
-                <Typography variant="subtitle1">{competitorData.medium.profile.displayName}</Typography>
-                <Typography variant="body2">Followers: {competitorData.medium.followerStats?.current?.toLocaleString() || 'N/A'}</Typography>
-                <Typography variant="body2">Bio: {competitorData.medium.profile.bio || 'N/A'}</Typography>
+                <Typography variant="subtitle1">{competitorData.medium.profile.data.name}</Typography>
+                <Typography variant="body2">Followers: {competitorData.medium.profile.data.followers.toLocaleString() || 'N/A'}</Typography>
+                <Typography variant="body2">Bio: {competitorData.medium.profile.data.description || 'N/A'}</Typography>
               </Paper>
             </Grid>
           )}

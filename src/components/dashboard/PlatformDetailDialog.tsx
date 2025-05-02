@@ -15,7 +15,7 @@ import {
   ToggleButton,
 } from '@mui/material';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { formatNumber, formatPercentage, fetchDefiLlamaData } from '../../services';
+import { formatNumber, formatPercentage } from '../../services';
 import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -34,6 +34,7 @@ import { GitHubMetrics } from './platforms/GitHubMetrics';
 import { LinkedInMetrics } from './platforms/LinkedInMetrics';
 import { MediumMetrics } from './platforms/MediumMetrics';
 import { OnchainMetrics } from './platforms/OnchainMetrics';
+import axios from 'axios';
 
 // Register Chart.js components
 ChartJS.register(
@@ -67,18 +68,10 @@ export const PlatformDetailDialog: React.FC<PlatformDetailDialogProps> = ({
   data, 
   loading 
 }) => {
-  console.log('PlatformDetailDialog rendered with:', {
-    open,
-    title,
-    data,
-    loading
-  });
-
-  const [defiLlamaData, setDefiLlamaData] = useState<any>(null);
-  const [defiLlamaLoading, setDefiLlamaLoading] = useState(false);
-  const [chartData, setChartData] = useState<any[]>([]);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   const [chartType, setChartType] = useState<'line' | 'bar'>('line');
+  const [onchainData, setOnchainData] = useState<any>(null);
+  const [onchainLoading, setOnchainLoading] = useState(false);
   
   // Reset state when dialog opens with a new title
   useEffect(() => {
@@ -87,55 +80,28 @@ export const PlatformDetailDialog: React.FC<PlatformDetailDialogProps> = ({
     }
   }, [open, title, data]);
   
+  // Fetch onchain data when dialog opens for Onchain platform
   useEffect(() => {
     if (open && title === 'Onchain' && data?.profile?.name) {
-      setDefiLlamaLoading(true);
-      fetchDefiLlamaData(data.profile.name)
-        .then(result => {
-          setDefiLlamaData(result);
-          if (result?.totalDataChart) {
-            // Process chart data
-            const processedData = result.totalDataChart
-              .filter((item: any) => item[1] > 0) // Filter out zero values
-              .map((item: any) => ({
-                date: new Date(item[0] * 1000),
-                value: item[1]
-              }));
-            setChartData(processedData);
+      setOnchainLoading(true);
+      
+      // Fetch data from the backend API
+      axios.get(`/api/social-media/onchain/${data.profile.name}?companyName=${data.profile.name}`)
+        .then(response => {
+          if (response.data && response.data.success) {
+            setOnchainData(response.data.data);
+          } else {
+            console.error('Failed to fetch onchain data:', response.data);
           }
         })
-        .finally(() => setDefiLlamaLoading(false));
+        .catch(error => {
+          console.error('Error fetching onchain data:', error);
+        })
+        .finally(() => {
+          setOnchainLoading(false);
+        });
     }
   }, [open, title, data?.profile?.name]);
-
-  const filterChartData = (range: '7d' | '30d' | '90d') => {
-    if (!defiLlamaData?.totalDataChart) return [];
-    
-    const now = new Date();
-    let daysAgo = 7;
-    
-    if (range === '30d') daysAgo = 30;
-    if (range === '90d') daysAgo = 90;
-    
-    const cutoffDate = new Date(now);
-    cutoffDate.setDate(now.getDate() - daysAgo);
-    
-    return defiLlamaData.totalDataChart
-      .filter((item: any) => {
-        const itemDate = new Date(item[0] * 1000);
-        return itemDate >= cutoffDate && item[1] > 0;
-      })
-      .map((item: any) => ({
-        date: new Date(item[0] * 1000),
-        value: item[1]
-      }));
-  };
-
-  useEffect(() => {
-    if (defiLlamaData?.totalDataChart) {
-      setChartData(filterChartData(timeRange));
-    }
-  }, [timeRange, defiLlamaData]);
 
   const handleTimeRangeChange = (event: React.MouseEvent<HTMLElement>, newTimeRange: '7d' | '30d' | '90d' | null) => {
     if (newTimeRange !== null) {
@@ -149,97 +115,6 @@ export const PlatformDetailDialog: React.FC<PlatformDetailDialogProps> = ({
     }
   };
 
-  const prepareChartData = () => {
-    const labels = chartData.map(item => 
-      item.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-    );
-    
-    const values = chartData.map(item => item.value);
-    
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Revenue',
-          data: values,
-          borderColor: color,
-          backgroundColor: chartType === 'bar' ? color : 'rgba(63, 81, 181, 0.1)',
-          borderWidth: 2,
-          pointRadius: 4,
-          pointBackgroundColor: color,
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          tension: 0.3,
-          fill: chartType === 'line',
-        }
-      ]
-    };
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        mode: 'index' as const,
-        intersect: false,
-        callbacks: {
-          label: function(context: any) {
-            return `$${formatNumber(context.raw)}`;
-          }
-        }
-      },
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false,
-        },
-        ticks: {
-          maxRotation: 0,
-          autoSkip: true,
-          maxTicksLimit: 10,
-        }
-      },
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(0, 0, 0, 0.05)',
-        },
-        ticks: {
-          callback: function(value: any) {
-            return `$${formatNumber(value)}`;
-          }
-        }
-      }
-    },
-    interaction: {
-      mode: 'nearest' as const,
-      axis: 'x' as const,
-      intersect: false
-    }
-  };
-
-  const renderGrowthChip = (value: number | undefined, label: string) => {
-    if (value === undefined) return null;
-    const isPositive = value >= 0;
-    const Icon = isPositive ? TrendingUp : TrendingDown;
-    const color = isPositive ? 'success' : 'error';
-    
-    return (
-      <Chip
-        icon={<Icon size={16} />}
-        label={`${label}: ${formatPercentage(value)}`}
-        color={color}
-        size="small"
-        sx={{ mr: 1, mb: 1 }}
-      />
-    );
-  };
-
   const renderPlatformContent = () => {
     console.log('Rendering platform content for:', title);
     console.log('Platform data:', data);
@@ -248,9 +123,7 @@ export const PlatformDetailDialog: React.FC<PlatformDetailDialogProps> = ({
       console.log('No data available for platform');
       return (
         <Box sx={{ p: 3, textAlign: 'center' }}>
-          <Typography variant="body1" color="text.secondary">
-            No data available for {title}
-          </Typography>
+          <Typography color="text.secondary">No data available</Typography>
         </Box>
       );
     }
@@ -265,30 +138,21 @@ export const PlatformDetailDialog: React.FC<PlatformDetailDialogProps> = ({
       case 'Medium':
         return <MediumMetrics data={data} color={color} />;
       case 'Onchain':
-        console.log('Rendering OnchainMetrics with data:', data);
         return (
-          <OnchainMetrics
-            data={data}
-            defiLlamaData={defiLlamaData}
-            defiLlamaLoading={defiLlamaLoading}
-            chartData={chartData}
+          <OnchainMetrics 
+            data={onchainData || data}
+            loading={onchainLoading || loading}
             timeRange={timeRange}
             chartType={chartType}
             color={color}
-            onTimeRangeChange={(event, newTimeRange) => {
-              if (newTimeRange !== null) setTimeRange(newTimeRange);
-            }}
-            onChartTypeChange={(event, newChartType) => {
-              if (newChartType !== null) setChartType(newChartType);
-            }}
+            onTimeRangeChange={handleTimeRangeChange}
+            onChartTypeChange={handleChartTypeChange}
           />
         );
       default:
         return (
           <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body1" color="text.secondary">
-              No metrics available for {title}
-            </Typography>
+            <Typography color="text.secondary">Platform not supported</Typography>
           </Box>
         );
     }

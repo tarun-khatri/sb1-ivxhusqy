@@ -40,6 +40,7 @@ const mockCompanies: Company[] = [
       defillama: 'phantom', // Added DefiLlama protocol identifier
       //cmcSymbolOrId: 'SOL', // Added example CMC symbol (Solana, as Phantom is a Solana wallet)
     },
+    onchainAddress: '0x1234567890abcdef1234567890abcdef12345678', // Added onchain address
   },
   // Add more companies here as needed
 ];

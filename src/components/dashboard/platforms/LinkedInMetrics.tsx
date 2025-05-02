@@ -2,7 +2,7 @@ import React from 'react';
 import { Grid, Typography, Box } from '@mui/material';
 import { Users, MessageCircle, ThumbsUp, Share2 } from 'lucide-react';
 import { formatNumber } from '../../../services';
-import { LinkedInData, LinkedInPost, LinkedInCompanyData } from '../../../types';
+import { LinkedInData } from '../../../types/index';
 
 interface LinkedInMetricsProps {
   data: LinkedInData;
@@ -23,13 +23,13 @@ export const LinkedInMetrics: React.FC<LinkedInMetricsProps> = ({ data, color })
 
   console.log('Rendering LinkedIn metrics with data:', data);
 
-  const companyData = data.companyProfile.data as LinkedInCompanyData;
-  const posts = data.posts.data as LinkedInPost[];
+  const companyData = data.companyProfile.data;
+  const posts = data.posts.data.posts || [];
 
   // Calculate total engagement metrics from posts
-  const totalReactions = posts.reduce((sum: number, post: LinkedInPost) => sum + (post.totalReactionCount || 0), 0);
-  const totalComments = posts.reduce((sum: number, post: LinkedInPost) => sum + (post.commentsCount || 0), 0);
-  const totalReposts = posts.reduce((sum: number, post: LinkedInPost) => sum + (post.repostsCount || 0), 0);
+  const totalReactions = posts.reduce((sum, post) => sum + (post.likes || 0), 0);
+  const totalComments = posts.reduce((sum, post) => sum + (post.comments || 0), 0);
+  const totalReposts = posts.reduce((sum, post) => sum + (post.reposts || 0), 0);
   const avgEngagement = posts.length > 0 ? totalReactions / posts.length : 0;
 
   return (
@@ -56,10 +56,10 @@ export const LinkedInMetrics: React.FC<LinkedInMetricsProps> = ({ data, color })
               </Typography>
             </Box>
             <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2, color: color }}>
-              {formatNumber(companyData.followerCount || 0)}
+              {formatNumber(companyData.followers || 0)}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {companyData.staffCountRange || 'N/A'} employees
+              {companyData.employeeCount || 'N/A'} employees
             </Typography>
           </Box>
         </Grid>
@@ -152,17 +152,14 @@ export const LinkedInMetrics: React.FC<LinkedInMetricsProps> = ({ data, color })
           {companyData.name}
         </Typography>
         <Typography variant="body1" sx={{ mb: 2 }}>
-          {companyData.tagline}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
           {companyData.description}
         </Typography>
         <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Founded: {companyData.founded?.year || 'N/A'}
+            Industry: {companyData.industry || 'N/A'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Location: {companyData.headquarter?.city}, {companyData.headquarter?.country}
+            Website: {companyData.website || 'N/A'}
           </Typography>
         </Box>
       </Box>
@@ -174,8 +171,8 @@ export const LinkedInMetrics: React.FC<LinkedInMetricsProps> = ({ data, color })
             Recent Posts
           </Typography>
           <Grid container spacing={3}>
-            {posts.slice(0, 5).map((post: LinkedInPost, index: number) => (
-              <Grid item xs={12} key={post.urn || index}>
+            {posts.slice(0, 5).map((post, index) => (
+              <Grid item xs={12} key={index}>
                 <Box sx={{ 
                   p: 3, 
                   bgcolor: 'background.paper',
@@ -183,20 +180,17 @@ export const LinkedInMetrics: React.FC<LinkedInMetricsProps> = ({ data, color })
                   boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
                 }}>
                   <Typography variant="body1" sx={{ mb: 2 }}>
-                    {post.text}
+                    {post.text || 'No content available'}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Posted: {post.postedAt}
+                      {post.likes || 0} likes
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {formatNumber(post.totalReactionCount || 0)} reactions
+                      {post.comments || 0} comments
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {formatNumber(post.commentsCount || 0)} comments
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {formatNumber(post.repostsCount || 0)} reposts
+                      {post.reposts || 0} reposts
                     </Typography>
                   </Box>
                 </Box>

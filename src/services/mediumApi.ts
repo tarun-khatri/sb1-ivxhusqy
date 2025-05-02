@@ -1,73 +1,96 @@
-import { MediumData, SocialProfile, FollowerStats, ContentAnalysis, Post } from '../types/index';
+import { MediumData, SocialProfile, FollowerStats, ContentAnalysis, Post, SocialMediaData } from '../types/index';
+import { fetchSocialMediaDataWithCache } from './socialMediaApi';
 
 // Mock data for Medium metrics
-const mockMediumData: MediumData = {
+const mockMediumData: SocialMediaData = {
+  success: true,
   profile: {
-    platform: 'Medium',
-    profileId: 'phantom-blog',
+    name: 'Phantom Blog',
+    username: 'phantom-blog',
     displayName: 'Phantom Blog',
-    profileImage: 'https://example.com/phantom-blog.png',
     bio: 'Official blog of Phantom - The friendly crypto wallet',
-    url: 'https://medium.com/@phantom-blog',
-    followers: 2000,
-    postsCount: 45
+    profileImage: 'https://via.placeholder.com/150',
+    postCount: 45,
+    followersCount: 2000
   },
   followerStats: {
     current: 2000,
-    oneDayChange: { count: 20, percentage: 1 },
-    oneWeekChange: { count: 100, percentage: 5.2 },
-    oneMonthChange: { count: 300, percentage: 17.6 }
+    totalFollowers: 2000,
+    oneWeekChange: {
+      count: 50,
+      percentage: 2.5
+    }
   },
   contentAnalysis: {
-    recentPosts: [
-      {
-        id: '1',
-        platform: 'Medium',
-        authorName: 'Phantom Blog',
-        authorAvatar: 'https://example.com/phantom-blog.png',
-        text: 'Introducing New Security Features in Phantom Wallet',
-        date: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-        postUrl: 'https://medium.com/@phantom-blog/new-security-features',
-        likes: 150,
-        comments: 25,
-        reposts: 45,
-        engagement: 220,
-        sentiment: 'positive'
-      }
-    ],
+    engagementRate: 0.15,
     metrics: {
-      engagementRate: 11,
-      avgEngagementRate: 220,
-      totalLikes: 3500,
-      totalComments: 850,
-      totalClaps: 12000,
-      postsLastMonth: 8
+      avgEngagementRate: 0.15,
+      totalLikes: 500,
+      totalShares: 100,
+      recentTweetsCount: 10
     }
+  },
+  posts: [
+    {
+      id: '1',
+      text: 'Introducing New Security Features in Phantom Wallet',
+      date: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+      likes: 150,
+      comments: 25,
+      shares: 45
+    }
+  ]
+};
+
+export const fetchMediumData = async (identifier: string, companyName: string): Promise<SocialMediaData> => {
+  if (!identifier) {
+    throw new Error('Medium identifier is required');
+  }
+
+  try {
+    // For now, return mock data since API is not subscribed
+    console.log(`Using mock data for Medium (${identifier})`);
+    return mockMediumData;
+  } catch (error) {
+    console.error('Error fetching Medium data:', error);
+    throw error;
   }
 };
 
-export async function fetchMediumMetrics(identifier: string): Promise<MediumData | null> {
-  if (!identifier) {
-    console.warn('No Medium identifier provided');
-    return null;
-  }
-
-  console.log('Fetching Medium metrics for:', identifier);
-  
+export const fetchMediumMetrics = async (companyName: string): Promise<MediumData> => {
   try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    const data = await fetchMediumData('phantom-blog', companyName);
     
-    // Return mock data with the correct identifier
+    // Transform the unified data format to Medium-specific format
     return {
-      ...mockMediumData,
       profile: {
-        ...mockMediumData.profile,
-        profileId: identifier
+        success: data.success,
+        data: {
+          name: data.profile.name || '',
+          username: data.profile.username || '',
+          description: data.profile.bio || '',
+          followers: data.followerStats.totalFollowers || 0,
+          stories: data.profile.postCount || 0
+        }
+      },
+      stories: {
+        success: data.success,
+        data: {
+          stories: data.posts.map(post => ({
+            id: post.id || '',
+            title: post.text,
+            date: post.date,
+            url: post.url || '',
+            likes: post.likes || 0,
+            comments: post.comments || 0,
+            reposts: post.shares || 0
+          })),
+          totalStories: data.profile.postCount || 0
+        }
       }
     };
   } catch (error) {
     console.error('Error fetching Medium metrics:', error);
-    return null;
+    throw error;
   }
-}
+};

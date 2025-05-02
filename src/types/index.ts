@@ -1,19 +1,23 @@
 // --- Generic Types ---
 
 export interface SocialProfile {
-  platform: 'Twitter' | 'LinkedIn' | 'Medium';
-  username?: string; // Twitter, Medium
-  profileId?: string; // LinkedIn
-  displayName: string;
-  profileImage: string;
+  id?: string;
+  name?: string;
+  displayName?: string;
+  username?: string;
+  handle?: string;
   bio?: string;
   location?: string;
   url?: string;
-  followers?: number; // Twitter, LinkedIn (Company), Medium (Publication)
-  following?: number; // Twitter, LinkedIn (Personal)
-  connections?: number; // LinkedIn (Personal)
+  website?: string;
+  profileImage?: string;
+  postCount?: number;
   postsCount?: number;
-  joinedDate?: string;
+  followersCount?: number;
+  followingCount?: number;
+  verified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FollowerHistory {
@@ -23,52 +27,91 @@ export interface FollowerHistory {
 
 export interface FollowerStats {
   current?: number;
-  oneDayChange?: { count: number; percentage: number };
-  oneWeekChange?: { count: number; percentage: number };
-  oneMonthChange?: { count: number; percentage: number };
+  totalFollowers?: number;
+  oneWeekChange?: {
+    count: number;
+    percentage: number;
+  };
+  followersChange?: {
+    count: number;
+    percentage: number;
+  };
+  oneMonthChange?: {
+    count: number;
+    percentage: number;
+  };
+  oneYearChange?: {
+    count: number;
+    percentage: number;
+  };
   history?: FollowerHistory[];
+  totalFollowers: number;
+  oneDayChange: {
+    count: number;
+    percentage: number;
+  };
 }
 
 export interface Post {
-  id: string;
-  platform: 'Twitter' | 'LinkedIn' | 'Medium';
-  authorId?: string;
-  authorName?: string;
-  authorAvatar?: string;
+  id?: string;
   text: string;
-  media?: { type: string; url: string }[];
   date: string;
-  postUrl: string;
-  likes?: number; // Twitter, LinkedIn
-  retweets?: number; // Twitter
-  reposts?: number; // LinkedIn
-  replies?: number; // Twitter
-  comments?: number; // LinkedIn, Medium
-  claps?: number; // Medium
-  engagement?: number; // Combined/calculated metric
-  sentiment?: 'positive' | 'negative' | 'neutral';
+  likes?: number;
+  comments?: number;
+  shares?: number;
+  retweets?: number;
+  url?: string;
+  media?: {
+    type: string;
+    url: string;
+  }[];
+  id: string;
+  created_at: string;
+  replies: number;
+  engagement_rate: number;
 }
 
 export interface ContentAnalysis {
-  recentPosts?: Post[];
-  metrics?: {
-    engagementRate: number; // Engagement rate as percentage
-    avgEngagementRate: number; // Average engagements per post
-    replies24h: number;
-    replies7d: number;
+  engagementRate: number;
+  metrics: {
+    avgEngagementRate: number;
     totalLikes: number;
     totalRetweets: number;
     totalReplies: number;
+    replies24h: number;
+    replies7d: number;
     recentTweetsCount: number;
+    tweetFrequency7d: number;
+    replyFrequency7d: number;
   };
 }
 
 // --- Platform Specific Types ---
 
 export interface TwitterData {
-  profile: SocialProfile;
+  profile: {
+    success: boolean;
+    data: {
+      name: string;
+      username: string;
+      description: string;
+      followers: number;
+      following: number;
+      tweets: number;
+    };
+  };
+  tweets: {
+    success: boolean;
+    data: {
+      tweets: Post[];
+      totalTweets: number;
+    };
+  };
   followerStats: FollowerStats;
   contentAnalysis: ContentAnalysis;
+  _source?: 'cache' | 'api';
+  _lastUpdated?: string;
+  summary?: string;
 }
 
 export interface LinkedInPost {
@@ -141,15 +184,44 @@ export interface LinkedInApiResponse {
 }
 
 export interface LinkedInData {
-  companyProfile: LinkedInApiResponse;
-  posts: LinkedInApiResponse;
+  companyProfile: {
+    success: boolean;
+    data: {
+      name: string;
+      description: string;
+      website: string;
+      followers: number;
+      employeeCount: number;
+      industry: string;
+    };
+  };
+  posts: {
+    success: boolean;
+    data: {
+      posts: any[];
+      totalPosts: number;
+    };
+  };
 }
 
 export interface MediumData {
-  profile: SocialProfile; // Can be Author or Publication Profile
-  followerStats?: FollowerStats; // For Publications
-  contentAnalysis?: ContentAnalysis; // Now includes recentPosts
-  // Removed recentPosts specific property here as it's part of ContentAnalysis
+  profile: {
+    success: boolean;
+    data: {
+      name: string;
+      username: string;
+      description: string;
+      followers: number;
+      stories: number;
+    };
+  };
+  stories: {
+    success: boolean;
+    data: {
+      stories: any[];
+      totalStories: number;
+    };
+  };
 }
 
 // --- GitHub Data Type ---
@@ -226,4 +298,82 @@ export interface CompetitorData {
   cryptoData?: CryptoData | null; // Added field for crypto data
   onchainData?: OnchainData | null; // Added field for onchain data
   github?: GitHubData | null; // Added field for GitHub data
+}
+
+export interface SocialMediaData {
+  success: boolean;
+  error?: string;
+  platform?: string;
+  identifier?: string;
+  companyName?: string;
+  profile: SocialProfile;
+  followerStats: FollowerStats;
+  contentAnalysis: ContentAnalysis;
+  posts: Post[];
+  feesHistory?: Array<{
+    date: string;
+    fees: number;
+  }>;
+  totalDailyFees?: number;
+  weeklyFees?: number;
+  averageDailyFees?: number;
+  protocolType?: string;
+  total24h?: number;
+  total48hto24h?: number;
+  total7d?: number;
+  totalAllTime?: number;
+  change_1d?: number;
+  activeWallets?: number;
+  activeWalletsGrowth24h?: number;
+  transactions24h?: number;
+  uniqueAddresses24h?: number;
+  expiresAt?: number;
+  _source?: 'cache' | 'api';
+  _lastUpdated?: string;
+  summary?: string;
+}
+
+export interface OnchainMetrics {
+  metrics: {
+    totalDailyFees: number;
+    weeklyFees: number;
+    averageDailyFees: number;
+    totalTransactions: number;
+    transactionGrowth24h: number;
+    transactionGrowth7d: number;
+    activeWallets: number;
+    activeWalletsGrowth24h: number;
+    feesHistory: {
+      date: Date;
+      value: number;
+    }[];
+  };
+  recentActivity: {
+    transactions24h: number;
+    uniqueAddresses24h: number;
+  };
+  defiLlamaData: {
+    total24h: number;
+    total7d: number;
+    totalAllTime: number;
+    change_1d: number;
+  };
+  chartData: {
+    date: Date;
+    value: number;
+  }[];
+  profile: {
+    category: string;
+    chains: string[];
+    twitter: string;
+    github: string;
+    audit_links: string[];
+    methodology: string;
+    methodologyURL: string;
+    tvl: number;
+    mcap: number;
+    staking: number;
+    fdv: number;
+  };
+  protocolType: string;
 }
