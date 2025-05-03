@@ -4,7 +4,7 @@
  */
 export const MONGODB_CONFIG = {
   COLLECTIONS: {
-    LINKEDIN: 'linkedin_data',
+    LINKEDIN: 'linkedIn_data',
     COMPETITORS: 'competitors',
     ANALYSIS: 'analysis_results'
   },
@@ -27,7 +27,7 @@ export const CACHE_EXPIRATION = {
 
 // MongoDB Collections
 export const COLLECTIONS = {
-  LINKEDIN: 'linkedin_data',
+  LINKEDIN: 'linkedIn_data',
   TWITTER: 'twitter_data',
   MEDIUM: 'medium_data',
   ONCHAIN: 'onchain_data',

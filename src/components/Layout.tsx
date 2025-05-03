@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './layout/Sidebar';
-import { Company } from '../types';
+import { Company } from '../types/index';
 
 const DRAWER_WIDTH = 240;
 

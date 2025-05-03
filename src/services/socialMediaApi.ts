@@ -4,7 +4,7 @@ import { fetchSocialMediaDataWithCache as fetchFromCache } from './apiCacheWrapp
 
 const API_BASE_URL = 'http://localhost:3001/api'; // Update with your actual API URL
 
-export type Platform = 'LinkedIn' | 'Twitter' | 'Telegram' | 'Medium' | 'Onchain';
+export type Platform = 'linkedIn' | 'Twitter' | 'Telegram' | 'Medium' | 'Onchain';
 
 export interface SocialMediaData {
   success: boolean;
@@ -99,7 +99,7 @@ export async function fetchAllSocialMediaData(
 }> {
   const promises = {
     linkedIn: identifiers.linkedIn
-      ? fetchSocialMediaDataWithCache('LinkedIn', identifiers.linkedIn, companyName)
+      ? fetchSocialMediaDataWithCache('linkedIn', identifiers.linkedIn, companyName)
       : Promise.resolve(null),
     twitter: identifiers.twitter
       ? fetchSocialMediaDataWithCache('Twitter', identifiers.twitter, companyName)

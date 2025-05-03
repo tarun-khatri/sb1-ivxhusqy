@@ -18,6 +18,8 @@ export interface SocialProfile {
   verified?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  staffCount?: number;
+  staffCountRange?: string;
 }
 
 export interface FollowerHistory {
@@ -45,7 +47,6 @@ export interface FollowerStats {
     percentage: number;
   };
   history?: FollowerHistory[];
-  totalFollowers: number;
   oneDayChange: {
     count: number;
     percentage: number;
@@ -65,7 +66,6 @@ export interface Post {
     type: string;
     url: string;
   }[];
-  id: string;
   created_at: string;
   replies: number;
   engagement_rate: number;
@@ -278,17 +278,18 @@ export interface CryptoData {
 // --- Dashboard State & Props ---
 
 export interface Company {
-  id: string; // Add a unique ID for stable state updates
+  _id: string;
+  id: string;
   name: string;
   identifiers: {
-    twitter?: string; // username
-    linkedIn?: string; // Company page ID/URL or Personal profile ID/URL
-    medium?: string; // username or publication slug
-    github?: string; // GitHub username
-    defillama?: string; // DefiLlama protocol identifier
+    linkedIn?: string;
+    twitter?: string;
+    telegram?: string;
+    medium?: string;
+    defillama?: string;
   };
-  onchainAddress?: string; // Added field for onchain address
-  cmcSymbolOrId?: string; // Added field for CMC token identifier
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface CompetitorData {
@@ -331,6 +332,11 @@ export interface SocialMediaData {
   _source?: 'cache' | 'api';
   _lastUpdated?: string;
   summary?: string;
+  employeeDistribution?: {
+    byFunction?: Array<{ name: string; count: number }>;
+    bySkill?: Array<{ name: string; count: number }>;
+    byLocation?: Array<{ name: string; count: number }>;
+  };
 }
 
 export interface OnchainMetrics {

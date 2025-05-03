@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, Typography, Grid, Dialog, DialogTitle, DialogContent, IconButton, Alert, Box, Divider, Button } from '@mui/material';
-import { Close as CloseIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Refresh as RefreshIcon, TrendingUp as TrendingUpIcon, TrendingDown as TrendingDownIcon } from '@mui/icons-material';
 import { fetchAllSocialMediaData } from '../../services/socialMediaApi';
 import { Company, SocialMediaData, Post } from '../../types/index';
 import OnchainMetrics from './platforms/OnchainMetrics';
 import TwitterMetrics from './platforms/TwitterMetrics';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import TelegramIcon from '@mui/icons-material/Telegram';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import { LinkedInMetrics } from './platforms/LinkedInMetrics';
 
 interface CompanyMetricsProps {
   company: Company;
@@ -39,15 +44,24 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
 
         // Fetch onchain data first
         let onchainData = null;
-        if (company.identifiers.defillama) {
+        if (company.identifiers?.defillama) {
           try {
             const onchainResponse = await fetch(`/api/cache/${company.name}/onchain/${company.identifiers.defillama}`);
+            if (!onchainResponse.ok) {
+              throw new Error('Failed to fetch onchain data');
+            }
             const onchainResult = await onchainResponse.json();
-            if (onchainResponse.ok && onchainResult.success) {
+            if (onchainResult.success) {
               onchainData = onchainResult.data;
+            } else {
+              throw new Error(onchainResult.error || 'Failed to fetch onchain data');
             }
           } catch (error) {
             console.error('Error fetching onchain data:', error);
+            setPlatformErrors(prev => ({
+              ...prev,
+              onchain: error instanceof Error ? error.message : 'Failed to fetch onchain data'
+            }));
           }
         }
 
@@ -56,9 +70,9 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
           {
             linkedIn: company.identifiers.linkedIn,
             twitter: company.identifiers.twitter,
-            telegram: undefined,
+            telegram: company.identifiers.telegram,
             medium: company.identifiers.medium,
-            onchain: company.onchainAddress
+            defillama: company.identifiers.defillama
           },
           company.name
         );
@@ -71,17 +85,6 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
         const errorMessage = err instanceof Error ? err.message : 'Failed to fetch social media data';
         setError(errorMessage);
         console.error('Error fetching social media data:', err);
-        
-        if (err instanceof Error && err.message.includes('Failed to refresh')) {
-          const platformMatch = err.message.match(/Failed to refresh (\w+) cache/);
-          if (platformMatch && platformMatch[1]) {
-            const platform = platformMatch[1].toLowerCase();
-            setPlatformErrors(prev => ({
-              ...prev,
-              [platform]: err.message
-            }));
-          }
-        }
       } finally {
         setLoading(false);
       }
@@ -145,8 +148,7 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
   };
 
   const renderPlatformCard = (platform: string, data: SocialMediaData | null) => {
-    const platformLower = platform.toLowerCase();
-    const platformError = platformErrors[platformLower];
+    const platformError = platformErrors[platform];
     
     if (!data) {
       return (
@@ -165,7 +167,7 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
               <Typography variant="h6">
                 {platform}
               </Typography>
-              {platformLower === 'onchain' && company.identifiers.defillama && (
+              {platform === 'onchain' && company.identifiers.defillama && (
                 <Button
                   size="small"
                   startIcon={<RefreshIcon />}
@@ -195,55 +197,309 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
     const profile = data.profile;
 
     // Special handling for onchain data
-    if (platformLower === 'onchain') {
+    if (platform === 'onchain') {
+      // Use the same logic as OnchainMetrics
+      const dailyRevenue = (typeof data.totalDailyFees === 'number' ? data.totalDailyFees : (typeof data.total24h === 'number' ? data.total24h : null));
+      const dailyChange = (typeof data.change_1d === 'number' ? data.change_1d : null);
+      const isPositive = dailyChange !== null && dailyChange >= 0;
       return (
         <Card 
           sx={{ 
             cursor: 'pointer',
-            '&:hover': { boxShadow: 6 },
             height: '100%',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            background: 'linear-gradient(135deg, #f8fafc 0%, #e3e9ff 100%)',
+            borderRadius: 3,
+            boxShadow: '0 4px 24px rgba(63,81,181,0.08)',
+            border: '1.5px solid #3f51b520',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            '&:hover': {
+              transform: 'translateY(-6px) scale(1.03)',
+              boxShadow: '0 8px 32px rgba(63,81,181,0.15)',
+            },
+            p: 0
+          }}
+          onClick={() => handlePlatformClick(platform)}
+        >
+          <CardContent sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: '#3f51b5' }}>
+                Onchain
+              </Typography>
+              {company.identifiers.defillama && (
+                <IconButton
+                  onClick={handleForceRefreshOnchain}
+                  disabled={refreshingOnchain}
+                  sx={{ minWidth: 'auto', fontWeight: 600 }}
+                >
+                  <RefreshIcon />
+                </IconButton>
+              )}
+            </Box>
+            <Box sx={{ textAlign: 'center', mb: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Daily Revenue
+              </Typography>
+              <Typography variant="h3" sx={{ fontWeight: 800, color: '#222', mb: 1 }}>
+                {dailyRevenue !== null && dailyRevenue !== 0 ? `$${dailyRevenue.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : 'N/A'}
+              </Typography>
+              {dailyChange !== null && dailyRevenue !== null && dailyRevenue !== 0 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 1 }}>
+                  {isPositive ? (
+                    <TrendingUpIcon sx={{ color: '#4caf50', mr: 1 }} />
+                  ) : (
+                    <TrendingDownIcon sx={{ color: '#f44336', mr: 1 }} />
+                  )}
+                  <Typography variant="h6" sx={{ color: isPositive ? '#4caf50' : '#f44336', fontWeight: 700 }}>
+                    {isPositive ? '+' : ''}{dailyChange.toFixed(2)}%
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                    today
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Twitter Card
+    if (platform === 'twitter') {
+      // Followers and 24h change
+      const followers = stats?.totalFollowers ?? stats?.current ?? null;
+      const changeObj = stats?.oneDayChange;
+      const changeCount = changeObj?.count ?? null;
+      const changePercent = changeObj?.percentage ?? null;
+      const isPositive = changePercent !== null && changePercent >= 0;
+      return (
+        <Card 
+          sx={{ 
+            cursor: 'pointer',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'linear-gradient(145deg, #ffffff 0%, #f5f8fa 100%)',
+            borderRadius: 2,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
+            }
           }}
           onClick={() => handlePlatformClick(platform)}
         >
           <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography variant="h6">
-                {platform}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <TwitterIcon sx={{ color: '#1DA1F2', fontSize: 28, mr: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+                Twitter
               </Typography>
-              {company.identifiers.defillama && (
-                <Button
-                  size="small"
-                  startIcon={<RefreshIcon />}
-                  onClick={handleForceRefreshOnchain}
-                  disabled={refreshingOnchain}
-                  sx={{ minWidth: 'auto' }}
-                >
-                  {refreshingOnchain ? 'Refreshing...' : 'Force Refresh'}
-                </Button>
+            </Box>
+            <Box sx={{ textAlign: 'center', mb: 2 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', mb: 1 }}>
+                {followers !== null ? followers.toLocaleString() : 'N/A'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ color: '#536471', mb: 1 }}>
+                Followers
+              </Typography>
+            </Box>
+            {changePercent !== null && (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 1 }}>
+                {isPositive ? (
+                  <TrendingUpIcon sx={{ color: '#4caf50', mr: 1 }} />
+                ) : (
+                  <TrendingDownIcon sx={{ color: '#f44336', mr: 1 }} />
+                )}
+                <Typography variant="h6" sx={{ color: isPositive ? '#4caf50' : '#f44336', fontWeight: 700 }}>
+                  {isPositive ? '+' : ''}{changePercent.toFixed(2)}%
+                </Typography>
+                {changeCount !== null && (
+                  <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                    ({isPositive ? '+' : ''}{changeCount.toLocaleString()})
+                  </Typography>
+                )}
+                <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                  24h
+                </Typography>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Medium Card
+    if (platform === 'medium') {
+      return (
+        <Card 
+          sx={{ 
+            cursor: 'pointer',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'linear-gradient(145deg, #ffffff 0%, #e6f9f2 100%)',
+            borderRadius: 2,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
+            }
+          }}
+          onClick={() => handlePlatformClick(platform)}
+        >
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <MenuBookIcon sx={{ color: '#00ab6c', fontSize: 28, mr: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+                Medium
+              </Typography>
+            </Box>
+            {(!data || !stats?.totalFollowers) ? (
+              <Typography color="textSecondary">No data available</Typography>
+            ) : (
+              <>
+                <Box sx={{ textAlign: 'center', mb: 2 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', mb: 1 }}>
+                    {stats?.totalFollowers?.toLocaleString() || stats?.current?.toLocaleString() || 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ color: '#00ab6c', mb: 1 }}>
+                    Followers
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#00ab6c' }}>
+                    {data.contentAnalysis?.metrics?.avgEngagementRate ? 
+                      (data.contentAnalysis.metrics.avgEngagementRate * 100).toFixed(2) + '%' : 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Engagement Rate
+                  </Typography>
+                </Box>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // LinkedIn Card
+    if (platform === 'linkedIn') {
+      // Followers, 24h change, employee count, engagement rate
+      const followers = stats?.totalFollowers ?? stats?.current ?? null;
+      const changeObj = stats?.oneDayChange;
+      const changeCount = changeObj?.count ?? null;
+      const changePercent = changeObj?.percentage ?? null;
+      const isPositive = changePercent !== null && changePercent >= 0;
+      const employeeCount = data.profile?.staffCount ?? 'N/A';
+      const engagementRate = data.contentAnalysis?.metrics?.avgEngagementRate ?? null;
+      return (
+        <Card 
+          sx={{ 
+            cursor: 'pointer',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'linear-gradient(145deg, #ffffff 0%, #eaf4fb 100%)',
+            borderRadius: 2,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
+            }
+          }}
+          onClick={() => handlePlatformClick(platform)}
+        >
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <LinkedInIcon sx={{ color: '#0077b5', fontSize: 28, mr: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+                LinkedIn
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: 'center', mb: 2 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', mb: 1 }}>
+                {followers?.toLocaleString() || 'N/A'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ color: '#0077b5', mb: 1 }}>
+                Followers
+              </Typography>
+              {changeCount !== null && (
+                <Typography variant="body2" color={isPositive ? 'green' : (changeCount < 0 ? 'red' : 'text.secondary')}>
+                  {changeCount > 0 ? '+' : ''}{changeCount?.toLocaleString()} ({changePercent > 0 ? '+' : ''}{changePercent?.toFixed(2)}%)
+                </Typography>
               )}
             </Box>
-            <Typography variant="body1">
-              Total Daily Fees: ${data.totalDailyFees?.toLocaleString() || data.total24h?.toLocaleString() || 'N/A'}
-            </Typography>
-            <Typography variant="body1">
-              Weekly Fees: ${data.weeklyFees?.toLocaleString() || data.total7d?.toLocaleString() || 'N/A'}
-            </Typography>
-            <Typography variant="body1">
-              All Time Revenue: ${data.totalAllTime?.toLocaleString() || 'N/A'}
-            </Typography>
-            <Typography variant="body1">
-              24h Change: {data.change_1d ? `${data.change_1d.toFixed(2)}%` : 'N/A'}
-            </Typography>
-            <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid rgba(0,0,0,0.12)' }}>
-              <Typography variant="caption" color="textSecondary">
-                Data Source: {data._source === 'cache' ? 'Cache' : 'API'}
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                {employeeCount} employees
               </Typography>
-              <Typography variant="caption" color="textSecondary" display="block">
-                Last Updated: {data._lastUpdated ? new Date(data._lastUpdated).toLocaleString() : 'N/A'}
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#0077b5', mt: 1 }}>
+                {engagementRate !== null ? (engagementRate * 100).toFixed(2) + '%' : 'N/A'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Engagement Rate
               </Typography>
             </Box>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Telegram Card
+    if (platform === 'telegram') {
+      return (
+        <Card 
+          sx={{ 
+            cursor: 'pointer',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'linear-gradient(145deg, #ffffff 0%, #e3f2fd 100%)',
+            borderRadius: 2,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            transition: 'transform 0.2s ease-in-out',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
+            }
+          }}
+          onClick={() => handlePlatformClick(platform)}
+        >
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <TelegramIcon sx={{ color: '#229ED9', fontSize: 28, mr: 1 }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+                Telegram
+              </Typography>
+            </Box>
+            {(!data || !stats?.totalFollowers) ? (
+              <Typography color="textSecondary">No data available</Typography>
+            ) : (
+              <>
+                <Box sx={{ textAlign: 'center', mb: 2 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', mb: 1 }}>
+                    {stats?.totalFollowers?.toLocaleString() || stats?.current?.toLocaleString() || 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ color: '#229ED9', mb: 1 }}>
+                    Followers
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600, color: '#229ED9' }}>
+                    {data.contentAnalysis?.metrics?.avgEngagementRate ? 
+                      (data.contentAnalysis.metrics.avgEngagementRate * 100).toFixed(2) + '%' : 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Engagement Rate
+                  </Typography>
+                </Box>
+              </>
+            )}
           </CardContent>
         </Card>
       );
@@ -253,29 +509,46 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
       <Card 
         sx={{ 
           cursor: 'pointer',
-          '&:hover': { boxShadow: 6 },
           height: '100%',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          background: 'linear-gradient(145deg, #ffffff 0%, #f5f8fa 100%)',
+          borderRadius: 2,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+          transition: 'transform 0.2s ease-in-out',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 6px 24px rgba(0,0,0,0.15)'
+          }
         }}
         onClick={() => handlePlatformClick(platform)}
       >
         <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="h6">
-              {platform}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <TwitterIcon sx={{ color: '#1DA1F2', fontSize: 28, mr: 1 }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+              Twitter
             </Typography>
           </Box>
-          <Typography variant="body1">
-            Followers: {stats?.totalFollowers?.toLocaleString() || stats?.current?.toLocaleString() || 'N/A'}
-          </Typography>
-          <Typography variant="body1">
-            Posts: {profile?.postCount?.toLocaleString() || profile?.postsCount?.toLocaleString() || 'N/A'}
-          </Typography>
-          <Typography variant="body1">
-            Engagement Rate: {data.contentAnalysis?.metrics?.avgEngagementRate ? 
-              (data.contentAnalysis.metrics.avgEngagementRate * 100).toFixed(2) + '%' : 'N/A'}
-          </Typography>
+
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', mb: 1 }}>
+              {stats?.totalFollowers?.toLocaleString() || stats?.current?.toLocaleString() || 'N/A'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ color: '#536471', mb: 1 }}>
+              Followers
+            </Typography>
+          </Box>
+
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#1DA1F2' }}>
+              {data.contentAnalysis?.metrics?.avgEngagementRate ? 
+                (data.contentAnalysis.metrics.avgEngagementRate * 100).toFixed(2) + '%' : 'N/A'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Engagement Rate
+            </Typography>
+          </Box>
         </CardContent>
       </Card>
     );
@@ -285,7 +558,7 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
     if (!data) return null;
 
     // Special handling for onchain data
-    if (platform.toLowerCase() === 'onchain') {
+    if (platform === 'onchain') {
       return (
         <Dialog
           open={!!selectedPlatform}
@@ -320,7 +593,7 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
     }
 
     // Special handling for Twitter data
-    if (platform.toLowerCase() === 'twitter') {
+    if (platform === 'twitter') {
       return (
         <Dialog
           open={!!selectedPlatform}
@@ -343,6 +616,35 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
               companyName={company.name}
               identifier={company.identifiers.twitter || ''}
               color="#1DA1F2"
+            />
+          </DialogContent>
+        </Dialog>
+      );
+    }
+
+    // Special handling for LinkedIn data
+    if (platform === 'linkedIn') {
+      return (
+        <Dialog
+          open={!!selectedPlatform}
+          onClose={handleCloseDialog}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            LinkedIn Metrics
+            <IconButton
+              aria-label="close"
+              onClick={handleCloseDialog}
+              sx={{ position: 'absolute', right: 8, top: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent>
+            <LinkedInMetrics 
+              data={socialMediaData.linkedIn || data}
+              color="#0077b5"
             />
           </DialogContent>
         </Dialog>
@@ -439,28 +741,26 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
       
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={3}>
-          {renderPlatformCard('LinkedIn', socialMediaData.linkedIn)}
+          {renderPlatformCard('linkedIn', socialMediaData.linkedIn)}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          {renderPlatformCard('Twitter', socialMediaData.twitter)}
+          {renderPlatformCard('twitter', socialMediaData.twitter)}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          {renderPlatformCard('Telegram', socialMediaData.telegram)}
+          {renderPlatformCard('telegram', socialMediaData.telegram)}
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          {renderPlatformCard('Medium', socialMediaData.medium)}
+          {renderPlatformCard('medium', socialMediaData.medium)}
         </Grid>
-        {company.onchainAddress && (
-          <Grid item xs={12} sm={6} md={3}>
-            {renderPlatformCard('Onchain', socialMediaData.onchain)}
-          </Grid>
-        )}
+        <Grid item xs={12} sm={6} md={3}>
+          {renderPlatformCard('onchain', socialMediaData.onchain)}
+        </Grid>
       </Grid>
 
       {selectedPlatform && (
         renderPlatformDetails(
           selectedPlatform,
-          socialMediaData[selectedPlatform.toLowerCase() as keyof typeof socialMediaData]
+          socialMediaData[selectedPlatform as keyof typeof socialMediaData]
         )
       )}
     </div>

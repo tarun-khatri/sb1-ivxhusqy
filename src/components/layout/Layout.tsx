@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Toolbar } from '@mui/material';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import { Company } from '../../types';
+import { Company } from '../../types/index';
 
 interface LayoutProps {
   children: React.ReactNode;

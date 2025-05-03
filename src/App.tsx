@@ -5,7 +5,7 @@ import theme from './theme';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import { CompanyMetrics } from './components/dashboard/CompanyMetrics';
-import { Company } from './types';
+import { Company } from './types/index';
 
 // Wrapper component to use hooks in the router context
 const AppContent: React.FC = () => {

@@ -1,7 +1,7 @@
-import { LinkedInData, SocialProfile, FollowerStats, ContentAnalysis, Post } from '../types/index';
+import { SocialMediaData } from '../types/index';
 import { fetchSocialMediaDataWithCache } from './socialMediaApi';
 
-export async function fetchLinkedInData(identifier: string, companyName: string): Promise<LinkedInData | null> {
+export async function fetchLinkedInData(identifier: string, companyName: string): Promise<SocialMediaData | null> {
   if (!identifier) {
     console.warn('No LinkedIn identifier provided');
     return null;
@@ -9,33 +9,11 @@ export async function fetchLinkedInData(identifier: string, companyName: string)
 
   try {
     const data = await fetchSocialMediaDataWithCache('LinkedIn', identifier, companyName);
-    
     if (!data) {
       console.warn('LinkedIn API returned no data');
       return null;
     }
-
-    // Transform the unified data format to LinkedIn-specific format
-    return {
-      companyProfile: {
-        success: true,
-        data: {
-          name: data.profile.name || data.profile.displayName || '',
-          description: data.profile.bio || '',
-          website: data.profile.url || '',
-          followers: data.followerStats?.current || 0,
-          employeeCount: 0, // This would need to come from a different API
-          industry: '', // This would need to come from a different API
-        }
-      },
-      posts: {
-        success: true,
-        data: {
-          posts: [], // We would need to fetch posts separately
-          totalPosts: data.profile.postsCount || 0
-        }
-      }
-    };
+    return data;
   } catch (error) {
     console.error('Error fetching LinkedIn data:', error);
     return null;

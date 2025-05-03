@@ -1,4 +1,4 @@
-import { Company } from '../types';
+import { Company } from '../types/index';
 import { CompetitorData } from '../types/index';
 import { fetchTwitterMetrics } from './twitterApi';
 import { fetchLinkedInData } from './linkedInApi';
@@ -78,3 +78,22 @@ export async function fetchAllCompetitorData(company: Company): Promise<Competit
     };
   }
 }
+
+export const fetchOnchainData = async (company: Company) => {
+  try {
+    if (!company.identifiers?.defillama) {
+      throw new Error('No DeFi Llama identifier found for this company');
+    }
+
+    const response = await fetch(`/api/cache/${company.name}/onchain/${company.identifiers.defillama}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch onchain data');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching onchain data:', error);
+    throw error;
+  }
+};

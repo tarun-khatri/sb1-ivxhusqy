@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TwitterData } from '../../../types/index';
 import { fetchTwitterMetrics } from '../../../services/twitterApi';
-import { Card, CardContent, Typography, Grid, Box, CircularProgress, IconButton, Button, Divider } from '@mui/material';
+import { Card, CardContent, Typography, Grid, Box, CircularProgress, IconButton, Button, Divider, Tooltip } from '@mui/material';
 import { TrendingUp, TrendingDown, TrendingFlat } from '@mui/icons-material';
 import { Sparkles } from 'lucide-react';
 import Dialog from '@mui/material/Dialog';
@@ -115,15 +115,17 @@ const TwitterMetrics: React.FC<TwitterMetricsProps> = ({ companyName, identifier
         }}>
           Twitter Analytics
         </Typography>
-        <IconButton 
-          onClick={() => setSummaryOpen(true)}
-          sx={{ 
-            bgcolor: `${color}10`,
-            '&:hover': { bgcolor: `${color}20` }
-          }}
-        >
-          <Sparkles size={22} color={color} />
-        </IconButton>
+        <Tooltip title={`Summary generated from the last ${data?.contentAnalysis?.metrics?.recentTweetsCount || 0} tweets. AI analyzes tweet content, engagement, and recency.`} arrow>
+          <IconButton 
+            onClick={() => setSummaryOpen(true)}
+            sx={{ 
+              bgcolor: `${color}10`,
+              '&:hover': { bgcolor: `${color}20` }
+            }}
+          >
+            <Sparkles size={22} color={color} />
+          </IconButton>
+        </Tooltip>
       </Box>
       <Dialog open={summaryOpen} onClose={() => setSummaryOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>AI Summary of Recent Tweets</DialogTitle>
@@ -220,29 +222,35 @@ const TwitterMetrics: React.FC<TwitterMetricsProps> = ({ companyName, identifier
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>
                   <Typography variant="subtitle2">Overall Engagement Rate</Typography>
-                  <Typography variant="h6">
-                    {contentAnalysis?.engagementRate?.toFixed(2) || '0.00'}%
-                  </Typography>
+                  <Tooltip title="Engagement Rate = (Total Likes + Replies + Shares) / Followers, averaged per post over the last 7 days." arrow>
+                    <Typography variant="h6">
+                      {contentAnalysis?.engagementRate?.toFixed(2) || '0.00'}%
+                    </Typography>
+                  </Tooltip>
                   <Typography variant="caption" color="text.secondary">
                     Based on last {contentAnalysis?.metrics?.recentTweetsCount || 0} tweets
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={4}>
                   <Typography variant="subtitle2">Per Post Engagement</Typography>
-                  <Typography variant="h6">
-                    {contentAnalysis?.metrics?.avgEngagementRate?.toFixed(2) || '0.00'}%
-                  </Typography>
+                  <Tooltip title="Average engagement per post = (Likes + Replies + Shares) / Followers for each post, averaged over the last 7 days." arrow>
+                    <Typography variant="h6">
+                      {contentAnalysis?.metrics?.avgEngagementRate?.toFixed(2) || '0.00'}%
+                    </Typography>
+                  </Tooltip>
                   <Typography variant="caption" color="text.secondary">
                     Average per individual post
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={4}>
                   <Typography variant="subtitle2">Daily Engagement Rate</Typography>
-                  <Typography variant="h6">
-                    {contentAnalysis?.metrics?.replies24h ? 
-                      ((contentAnalysis.metrics.replies24h / profile.data.followers) * 100).toFixed(2) : 
-                      '0.00'}%
-                  </Typography>
+                  <Tooltip title="Daily engagement = (Replies in last 24h / Followers) * 100." arrow>
+                    <Typography variant="h6">
+                      {contentAnalysis?.metrics?.replies24h ? 
+                        ((contentAnalysis.metrics.replies24h / profile.data.followers) * 100).toFixed(2) : 
+                        '0.00'}%
+                    </Typography>
+                  </Tooltip>
                   <Typography variant="caption" color="text.secondary">
                     Last 24 hours
                   </Typography>
