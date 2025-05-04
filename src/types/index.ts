@@ -112,6 +112,7 @@ export interface TwitterData {
   _source?: 'cache' | 'api';
   _lastUpdated?: string;
   summary?: string;
+  posts?: any[];
 }
 
 export interface LinkedInPost {
@@ -175,6 +176,52 @@ export interface LinkedInCompanyData {
   };
   followerCount: number;
   staffCountRange: string;
+  employeeDistribution?: {
+    byFunction?: Array<{ name: string; count: number }>;
+    bySkill?: Array<{ name: string; count: number }>;
+    byLocation?: Array<{ name: string; count: number }>;
+  };
+  funding?: {
+    totalFunding?: number;
+    lastFundingRound?: {
+      amount: number;
+      date: string;
+      round: string;
+      investors: string[];
+    };
+    fundingRounds?: Array<{
+      amount: number;
+      date: string;
+      round: string;
+      investors: string[];
+    }>;
+  };
+  companySize?: {
+    min: number;
+    max: number;
+    range: string;
+  };
+  specialties?: string[];
+  companyType?: string;
+  revenue?: {
+    range?: string;
+    year?: number;
+  };
+  acquisitions?: Array<{
+    company: string;
+    date: string;
+    amount?: number;
+  }>;
+  similarCompanies?: Array<{
+    name: string;
+    url: string;
+    industry: string;
+  }>;
+  recentUpdates?: Array<{
+    type: string;
+    date: string;
+    description: string;
+  }>;
 }
 
 export interface LinkedInApiResponse {
@@ -190,9 +237,40 @@ export interface LinkedInData {
       name: string;
       description: string;
       website: string;
-      followers: number;
+      followers: {
+        totalFollowers: number;
+      } | number;
       employeeCount: number;
       industry: string;
+      profileImage?: string;
+      displayName?: string;
+      companyName?: string;
+      bio?: string;
+      linkedinUrl?: string;
+      staffCount?: number;
+      staffCountRange?: string;
+      metrics?: {
+        avgEngagementRate?: number;
+      };
+      engagementRate?: number;
+      fundingData?: any;
+      employeeDistribution?: {
+        byFunction?: Array<{ name: string; count: number }>;
+        bySkill?: Array<{ name: string; count: number }>;
+        byLocation?: Array<{ name: string; count: number }>;
+      };
+      growth?: {
+        followers?: any[];
+      };
+      companySize?: {
+        range: string;
+      };
+      specialties?: string[];
+      companyType?: string;
+      revenue?: {
+        range: string;
+        year: number;
+      };
     };
   };
   posts: {
@@ -202,6 +280,16 @@ export interface LinkedInData {
       totalPosts: number;
     };
   };
+  acquisitions?: Array<{
+    company: string;
+    date: string;
+    amount?: number;
+  }>;
+  recentUpdates?: Array<{
+    type: string;
+    date: string;
+    description: string;
+  }>;
 }
 
 export interface MediumData {
@@ -281,6 +369,7 @@ export interface Company {
   _id: string;
   id: string;
   name: string;
+  logo?: string;
   identifiers: {
     linkedIn?: string;
     twitter?: string;

@@ -149,8 +149,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     setAddCompanyOpen(false);
   };
 
-  const getLogoURL = (companyName: string) => {
-    const formattedName = companyName.toLowerCase().replace(/\s+/g, '-');
+  const getLogoURL = (company: Company) => {
+    if (!company) return '';
+    
+    // First try LinkedIn logo from the company data
+    if (company.logo) {
+      return company.logo;
+    }
+    
+    // Then try Clearbit
+    const formattedName = company.name.toLowerCase().replace(/\s+/g, '-');
     return `https://logo.clearbit.com/${formattedName}.com`;
   };
 
@@ -169,7 +177,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </ListItem>
         ) : (
           companies.map((company) => {
-            const logoURL = getLogoURL(company.name);
+            const logoURL = getLogoURL(company);
             return (
               <ListItem 
                 key={company.id} 
@@ -196,7 +204,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                       src={logoURL}
                       alt={company.name.charAt(0)}
                       sx={{ width: 28, height: 28, bgcolor: theme.palette.primary.light, fontSize: '0.8rem' }}
-                      imgProps={{ onError: (e: any) => { e.target.src = ''; } }}
+                      imgProps={{ 
+                        onError: (e: any) => { 
+                          // If LinkedIn logo fails, try Clearbit
+                          if (e.target.src === company.logo) {
+                            const formattedName = company.name.toLowerCase().replace(/\s+/g, '-');
+                            e.target.src = `https://logo.clearbit.com/${formattedName}.com`;
+                          } else {
+                            // If Clearbit fails, fallback to first letter
+                            e.target.src = '';
+                          }
+                        } 
+                      }}
                     >
                       {company.name.charAt(0)}
                     </Avatar>
