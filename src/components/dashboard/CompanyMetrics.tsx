@@ -388,14 +388,20 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
 
     // LinkedIn Card
     if (platform === 'linkedIn') {
-      // Followers, 24h change, employee count, engagement rate
-      const followers = stats?.totalFollowers ?? stats?.current ?? null;
+      // Use the same extraction logic as LinkedInMetrics
+      const companyProfile = (data as any)?.companyProfile;
+      const stats = data.followerStats;
+      let followers = null;
+      if (companyProfile && companyProfile.data) {
+        const companyData = companyProfile.data;
+        followers = typeof companyData?.followers === 'number'
+          ? companyData.followers
+          : companyData?.followers?.totalFollowers ?? 0;
+      }
       const changeObj = stats?.oneDayChange;
       const changeCount = changeObj?.count ?? null;
       const changePercent = changeObj?.percentage ?? null;
       const isPositive = changePercent !== null && changePercent >= 0;
-      const employeeCount = data.profile?.staffCount ?? 'N/A';
-      const engagementRate = data.contentAnalysis?.metrics?.avgEngagementRate ?? null;
       return (
         <Card 
           sx={{ 
@@ -423,26 +429,26 @@ export const CompanyMetrics: React.FC<CompanyMetricsProps> = ({ company }) => {
             </Box>
             <Box sx={{ textAlign: 'center', mb: 2 }}>
               <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', mb: 1 }}>
-                {followers?.toLocaleString() || 'N/A'}
+                {followers !== null ? followers.toLocaleString() : 'N/A'}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ color: '#0077b5', mb: 1 }}>
                 Followers
               </Typography>
-              {changeCount !== null && (
-                <Typography variant="body2" color={isPositive ? 'green' : (changeCount < 0 ? 'red' : 'text.secondary')}>
-                  {changeCount > 0 ? '+' : ''}{changeCount?.toLocaleString()} ({changePercent > 0 ? '+' : ''}{changePercent?.toFixed(2)}%)
-                </Typography>
-              )}
             </Box>
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                {employeeCount} employees
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 1 }}>
+              {isPositive ? (
+                <TrendingUpIcon sx={{ color: '#4caf50', mr: 1 }} />
+              ) : (
+                <TrendingDownIcon sx={{ color: '#f44336', mr: 1 }} />
+              )}
+              <Typography variant="h6" sx={{ color: isPositive ? '#4caf50' : '#f44336', fontWeight: 700 }}>
+                {isPositive ? '+' : ''}{(changePercent ?? 0).toFixed(2)}%
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#0077b5', mt: 1 }}>
-                {engagementRate !== null ? (engagementRate * 100).toFixed(2) + '%' : 'N/A'}
+              <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                ({isPositive ? '+' : ''}{(changeCount ?? 0).toLocaleString()})
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Engagement Rate
+              <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                24h
               </Typography>
             </Box>
           </CardContent>

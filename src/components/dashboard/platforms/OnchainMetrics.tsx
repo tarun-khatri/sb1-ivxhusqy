@@ -143,14 +143,22 @@ const OnchainMetrics: React.FC<OnchainMetricsProps> = ({
   // Helper to extract metrics from SocialMediaData
   const getMetrics = (data: SocialMediaData | null) => {
     if (!data) return null;
+
+    // Calculate 7d and previous 7d sums from feesHistory
+    let last7d = 0, prev7d = 0;
+    if (Array.isArray(data.feesHistory) && data.feesHistory.length >= 14) {
+      const len = data.feesHistory.length;
+      last7d = data.feesHistory.slice(len - 7, len).reduce((sum, d) => sum + (d.fees || 0), 0);
+      prev7d = data.feesHistory.slice(len - 14, len - 7).reduce((sum, d) => sum + (d.fees || 0), 0);
+    }
+
     return {
       totalDailyFees: data.totalDailyFees ?? data.total24h ?? 0,
       weeklyFees: data.weeklyFees ?? data.total7d ?? 0,
       averageDailyFees: data.averageDailyFees ?? (data.total7d ? data.total7d / 7 : 0),
       transactionGrowth24h: data.change_1d ?? 0,
-      transactionGrowth7d: data.total7d && data.total24h ? ((data.total7d - data.total24h) / data.total24h) * 100 : 0,
+      transactionGrowth7d: prev7d > 0 ? ((last7d - prev7d) / prev7d) * 100 : 0,
       activeWallets: data.activeWallets ?? 0,
-      activeWalletsGrowth24h: data.activeWalletsGrowth24h ?? 0,
       feesHistory: data.feesHistory ?? []
     };
   };
@@ -439,8 +447,7 @@ const OnchainMetrics: React.FC<OnchainMetricsProps> = ({
             </Box>
           </Box>
         </Grid>
-
-        {/* Weekly Revenue Card */}
+        {/* Active Wallets Card */}
         <Grid item xs={12} md={6}>
           <Box sx={{ 
             p: 3, 
@@ -460,23 +467,20 @@ const OnchainMetrics: React.FC<OnchainMetricsProps> = ({
               <Box sx={{ 
                 p: 1, 
                 borderRadius: 2, 
-                bgcolor: `${color}15`,
+                bgcolor: `${color}15`, 
                 mr: 2,
                 display: 'flex',
                 alignItems: 'center'
               }}>
-                <TrendingUp size={24} color={color} />
+                <Users size={24} color={color} />
               </Box>
               <Box>
-                <Typography variant="body2" color="text.secondary">Weekly Revenue</Typography>
+                <Typography variant="body2" color="text.secondary">Active Wallets</Typography>
                 <Typography variant="h4" sx={{ fontWeight: 700, color }}>
-                  ${formatNumber(metrics.weeklyFees)}
+                  {formatNumber(metrics.activeWallets)}
                 </Typography>
               </Box>
             </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              Average Daily: ${formatNumber(metrics.averageDailyFees)}
-            </Typography>
           </Box>
         </Grid>
       </Grid>

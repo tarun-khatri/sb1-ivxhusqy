@@ -30,7 +30,7 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
       case 'Twitter':
         return metrics.profile?.followers || 0;
       case 'LinkedIn':
-        return metrics.companyProfile?.data?.followerCount || 0;
+        return metrics.companyProfile?.data?.totalFollowers || 0;
       case 'Medium':
         return metrics.profile?.followers || 0;
       case 'Onchain':
@@ -59,6 +59,19 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
         return 'Metric';
     }
   };
+
+  const get24hChange = () => {
+    if (title === 'LinkedIn' && metrics) {
+      const change = metrics.followers24hChange;
+      const percent = metrics.followers24hPercent;
+      if (typeof change === 'number' && typeof percent === 'number') {
+        return { change, percent };
+      }
+    }
+    return null;
+  };
+
+  const change24h = get24hChange();
 
   return (
     <Card 
@@ -95,6 +108,11 @@ export const PlatformCard: React.FC<PlatformCardProps> = ({
             <Typography variant="body2" color="text.secondary">
               {getMetricLabel()}
             </Typography>
+            {title === 'LinkedIn' && change24h && (
+              <Typography variant="body2" sx={{ color: change24h.change === 0 ? 'text.secondary' : change24h.change > 0 ? 'success.main' : 'error.main', display: 'flex', alignItems: 'center', mt: 0.5 }}>
+                {change24h.change > 0 ? '+' : ''}{change24h.change} ({change24h.percent.toFixed(2)}%) 24h
+              </Typography>
+            )}
           </Box>
         ) : (
           <Box sx={{ textAlign: 'center', py: 1 }}>

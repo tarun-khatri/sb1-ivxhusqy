@@ -58,6 +58,7 @@ export async function fetchTwitterData(identifier: string, companyName: string):
           replyFrequency7d: data.contentAnalysis.metrics?.replyFrequency7d || 0
         }
       },
+      posts: data.posts || [],
       _source: data._source,
       _lastUpdated: data._lastUpdated,
       summary: data.summary

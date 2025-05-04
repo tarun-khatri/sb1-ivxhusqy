@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { ThemeProvider, CssBaseline } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import theme from './theme';
+import ThemeProvider from './theme/ThemeProvider';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import { CompanyMetrics } from './components/dashboard/CompanyMetrics';
@@ -56,8 +55,7 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <ThemeProvider>
       <Router>
         <AppContent />
       </Router>
